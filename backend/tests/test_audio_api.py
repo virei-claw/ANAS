@@ -52,9 +52,9 @@ async def test_audio_get_not_found():
 
 
 @pytest.mark.asyncio
-async def test_audio_delete_not_found():
-    """Test deleting non-existent audio returns 404."""
+async def test_audio_delete_requires_auth():
+    """Test deleting audio without auth returns 401."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.delete("/api/audio/00000000-0000-0000-0000-000000000000")
-        assert response.status_code == 404
+        assert response.status_code == 401  # 认证required

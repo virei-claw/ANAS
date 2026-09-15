@@ -138,7 +138,6 @@ function App() {
 
   useEffect(() => {
     // 检查登录状态
-    const token = localStorage.getItem('token')
     const userStr = localStorage.getItem('user')
     if (userStr) {
       setUser(JSON.parse(userStr))
