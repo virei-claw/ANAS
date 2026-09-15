@@ -7,6 +7,7 @@ import AudioList from './pages/AudioList'
 import AudioDetail from './pages/AudioDetail'
 import Login from './pages/Login'
 import Settings from './pages/Settings'
+import ReviewQueue from './pages/ReviewQueue'
 
 // 导航栏组件
 interface NavBarProps {
@@ -162,6 +163,7 @@ function App() {
             <Route path="/" element={<AudioList />} />
             <Route path="/audio/:id" element={<AudioDetail />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/review" element={<ReviewQueue />} />
           </ProtectedRoute>
         </Routes>
       </div>
