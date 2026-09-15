@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { audioApi, AudioFile } from '@/lib/api'
 import { formatDuration, formatFileSize } from '@/lib/utils'
 import { AudioTableSkeleton } from '@/components/Skeleton'
-import { Upload, Search, CheckCircle, Clock, XCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Upload, Search, CheckCircle, Clock, XCircle, ChevronLeft, ChevronRight, Trash2, CheckSquare } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 // 筛选状态
@@ -72,6 +72,8 @@ export default function AudioList() {
   const [currentPage, setCurrentPage] = useState(1)
   const [total, setTotal] = useState(0)
   const pageSize = 10
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [batchLoading, setBatchLoading] = useState(false)
 
   // 筛选标签
   const filters: { key: FilterStatus; label: string; icon: typeof CheckCircle }[] = [
@@ -133,6 +135,41 @@ export default function AudioList() {
     }
   }
 
+  // 批量选择
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selectedIds)
+    if (newSelected.has(id)) {
+      newSelected.delete(id)
+    } else {
+      newSelected.add(id)
+    }
+    setSelectedIds(newSelected)
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === audios.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(audios.map(a => a.id))
+    }
+  }
+
+  const handleBatchDelete = async () => {
+    if (selectedIds.size === 0) return
+    if (!confirm(`确定删除选中的 ${selectedIds.size} 个音频？`)) return
+    setBatchLoading(true)
+    try {
+      await Promise.all([...selectedIds].map(id => audioApi.delete(id)))
+      toast.success(`成功删除 ${selectedIds.size} 个音频`)
+      setSelectedIds(new Set())
+      loadAudios()
+    } catch (error: any) {
+      toast.error('批量删除失败')
+    } finally {
+      setBatchLoading(false)
+    }
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -189,6 +226,21 @@ export default function AudioList() {
         ))}
       </div>
 
+      {/* 批量操作栏 */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between mb-4 p-3 bg-indigo-50 rounded-lg">
+          <span className="text-sm text-indigo-700">已选择 {selectedIds.size} 项</span>
+          <button
+            onClick={handleBatchDelete}
+            disabled={batchLoading}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+          >
+            <Trash2 size={18} />
+            批量删除
+          </button>
+        </div>
+      )}
+
       {/* 表格 */}
       {loading ? (
         <AudioTableSkeleton />
@@ -205,6 +257,9 @@ export default function AudioList() {
           <table className="w-full bg-white rounded-lg shadow">
             <thead>
               <tr className="border-b bg-gray-50">
+                <th className="px-4 py-3 font-medium text-gray-600 w-12">
+                  <CheckSquare size={18} className="cursor-pointer hover:text-indigo-600" onClick={toggleSelectAll} />
+                </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">文件名</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">时长</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">大小</th>
@@ -214,7 +269,15 @@ export default function AudioList() {
             </thead>
             <tbody>
               {audios.map((audio) => (
-                <tr key={audio.id} className="border-b hover:bg-gray-50">
+                <tr key={audio.id} className={`border-b hover:bg-gray-50 ${selectedIds.has(audio.id) ? 'bg-indigo-50' : ''}`}>
+                  <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(audio.id)}
+                      onChange={() => toggleSelect(audio.id)}
+                      className="w-4 h-4 rounded"
+                    />
+                  </td>
                   <td className="px-4 py-3">
                     <Link to={`/audio/${audio.id}`} className="text-indigo-600 hover:underline">
                       {audio.filename}
