@@ -18,7 +18,7 @@ def create_annotation(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    annotation = Annotation(**data.model_dump())
+    annotation = Annotation(**data.model_dump(), annotator_id=current_user.id)
     db.add(annotation)
     db.commit()
     db.refresh(annotation)
@@ -26,7 +26,8 @@ def create_annotation(
         **annotation.__dict__,
         part_name=annotation.part_name.name if annotation.part_name else None,
         noise_type=annotation.noise_type.name if annotation.noise_type else None,
-        road_type=annotation.road_type.name if annotation.road_type else None
+        road_type=annotation.road_type.name if annotation.road_type else None,
+        annotator_name=annotation.annotator.full_name or annotation.annotator.username if annotation.annotator else None
     )
 
 @router.get("", response_model=List[AnnotationResponse])
@@ -46,7 +47,8 @@ def list_annotations(
             **a.__dict__,
             part_name=a.part_name.name if a.part_name else None,
             noise_type=a.noise_type.name if a.noise_type else None,
-            road_type=a.road_type.name if a.road_type else None
+            road_type=a.road_type.name if a.road_type else None,
+            annotator_name=a.annotator.full_name or a.annotator.username if a.annotator else None
         ))
     return result
 
@@ -63,7 +65,8 @@ def get_annotation(
         **annotation.__dict__,
         part_name=annotation.part_name.name if annotation.part_name else None,
         noise_type=annotation.noise_type.name if annotation.noise_type else None,
-        road_type=annotation.road_type.name if annotation.road_type else None
+        road_type=annotation.road_type.name if annotation.road_type else None,
+        annotator_name=annotation.annotator.full_name or annotation.annotator.username if annotation.annotator else None
     )
 
 @router.put("/{annotation_id}", response_model=AnnotationResponse)
@@ -86,7 +89,8 @@ def update_annotation(
         **annotation.__dict__,
         part_name=annotation.part_name.name if annotation.part_name else None,
         noise_type=annotation.noise_type.name if annotation.noise_type else None,
-        road_type=annotation.road_type.name if annotation.road_type else None
+        road_type=annotation.road_type.name if annotation.road_type else None,
+        annotator_name=annotation.annotator.full_name or annotation.annotator.username if annotation.annotator else None
     )
 
 @router.delete("/{annotation_id}")

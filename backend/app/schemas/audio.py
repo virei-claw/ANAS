@@ -16,6 +16,8 @@ class AudioFileResponse(BaseModel):
     duration: float
     sample_rate: Optional[int] = None
     file_size: int
+    uploader_id: Optional[UUID] = None
+    uploader_name: Optional[str] = None
     created_at: datetime
 
     class Config:

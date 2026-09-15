@@ -25,9 +25,11 @@ class Annotation(Base):
     reviewed_by = Column(String(36), ForeignKey('users.id'), nullable=True)
     reviewed_at = Column(DateTime, nullable=True)
     reject_reason = Column(Text, nullable=True)
+    annotator_id = Column(String(36), ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     audio = relationship("AudioFile", back_populates="annotations")
     part_name = relationship("PartName")
     noise_type = relationship("NoiseType")
     road_type = relationship("RoadType")
+    annotator = relationship("User", foreign_keys=[annotator_id])

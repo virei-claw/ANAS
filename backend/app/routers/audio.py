@@ -2,7 +2,7 @@ import os
 import uuid
 import aiofiles
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import Optional
 from pydub import AudioSegment
 
@@ -46,7 +46,8 @@ async def upload_audio(
         filepath=filepath,
         duration=duration,
         sample_rate=sample_rate,
-        file_size=len(content)
+        file_size=len(content),
+        uploader_id=current_user.id
     )
     db.add(db_audio)
     db.commit()
@@ -60,14 +61,27 @@ def list_audio(
     search: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    query = db.query(AudioFile)
+    query = db.query(AudioFile).options(joinedload(AudioFile.uploader))
     if search:
         query = query.filter(AudioFile.filename.contains(search))
 
     total = query.count()
     items = query.order_by(AudioFile.created_at.desc()).offset((page-1)*page_size).limit(page_size).all()
 
-    return AudioFileList(items=items, total=total, page=page, page_size=page_size)
+    result = []
+    for item in items:
+        result.append(AudioFileResponse(
+            id=item.id,
+            filename=item.filename,
+            filepath=item.filepath,
+            duration=item.duration,
+            sample_rate=item.sample_rate,
+            file_size=item.file_size,
+            uploader_id=item.uploader_id,
+            uploader_name=item.uploader.full_name or item.uploader.username if item.uploader else None,
+            created_at=item.created_at
+        ))
+    return AudioFileList(items=result, total=total, page=page, page_size=page_size)
 
 @router.get("/{audio_id}/stream")
 async def stream_audio(audio_id: uuid.UUID, db: Session = Depends(get_db)):
@@ -83,10 +97,20 @@ async def stream_audio(audio_id: uuid.UUID, db: Session = Depends(get_db)):
 
 @router.get("/{audio_id}", response_model=AudioFileResponse)
 def get_audio(audio_id: uuid.UUID, db: Session = Depends(get_db)):
-    audio = db.query(AudioFile).filter(AudioFile.id == audio_id).first()
+    audio = db.query(AudioFile).options(joinedload(AudioFile.uploader)).filter(AudioFile.id == audio_id).first()
     if not audio:
         raise HTTPException(status_code=404, detail="Audio not found")
-    return audio
+    return AudioFileResponse(
+        id=audio.id,
+        filename=audio.filename,
+        filepath=audio.filepath,
+        duration=audio.duration,
+        sample_rate=audio.sample_rate,
+        file_size=audio.file_size,
+        uploader_id=audio.uploader_id,
+        uploader_name=audio.uploader.full_name or audio.uploader.username if audio.uploader else None,
+        created_at=audio.created_at
+    )
 
 @router.delete("/{audio_id}")
 def delete_audio(

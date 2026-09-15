@@ -33,6 +33,8 @@ export interface AudioFile {
   duration: number
   sample_rate: number
   file_size: number
+  uploader_id?: string
+  uploader_name?: string
   created_at: string
 }
 
@@ -54,6 +56,8 @@ export interface Annotation {
   part_name: string | null
   noise_type: string | null
   road_type: string | null
+  annotator_id?: string
+  annotator_name?: string
 }
 
 export interface DictItem {

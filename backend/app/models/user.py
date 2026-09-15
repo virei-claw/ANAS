@@ -25,6 +25,7 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     roles = relationship('Role', secondary=user_roles, back_populates='users')
+    audio_files = relationship('AudioFile', back_populates='uploader')
 
 class Role(Base):
     __tablename__ = 'roles'

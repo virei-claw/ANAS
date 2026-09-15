@@ -104,6 +104,7 @@ export default function AudioDetail() {
                   <td className="py-2">{ann.speed ?? '-'}</td>
                   <td className="py-2">{ann.temperature ?? '-'}</td>
                   <td className="py-2">{ann.test_mode === 'dynamic' ? '动态' : '静态'}</td>
+                  <td className="py-2">{ann.annotator_name || '未知'}</td>
                   <td className="py-2 font-mono text-sm">{formatTime(ann.start_time)} - {formatTime(ann.end_time)}</td>
                   <td className="py-2">
                     <button

@@ -285,6 +285,7 @@ export default function AudioList() {
                   </td>
                   <td className="px-4 py-3">{formatDuration(audio.duration)}</td>
                   <td className="px-4 py-3">{formatFileSize(audio.file_size)}</td>
+                  <td className="px-4 py-3">{audio.uploader_name || '未知'}</td>
                   <td className="px-4 py-3">{new Date(audio.created_at).toLocaleString()}</td>
                   <td className="px-4 py-3">
                     <Link to={`/audio/${audio.id}`} className="text-indigo-600 hover:underline mr-4">查看</Link>
