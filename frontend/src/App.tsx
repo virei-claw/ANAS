@@ -10,6 +10,7 @@ import Settings from './pages/Settings'
 import ReviewQueue from './pages/ReviewQueue'
 import Export from './pages/Export'
 import Projects from './pages/Projects'
+import Dashboard from './pages/Dashboard'
 
 // 导航栏组件
 interface NavBarProps {
@@ -170,6 +171,7 @@ function App() {
             <Route path="/review" element={<ReviewQueue />} />
             <Route path="/export" element={<Export />} />
             <Route path="/projects" element={<Projects />} />
+            <Route path="/dashboard" element={<Dashboard />} />
           </ProtectedRoute>
         </Routes>
       </div>
