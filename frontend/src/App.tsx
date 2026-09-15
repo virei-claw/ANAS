@@ -1,5 +1,5 @@
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
-import { Home, Settings as SettingsIcon, BarChart3, User, Menu, X, LogOut, Download, FolderOpen } from 'lucide-react'
+import { Home, Settings as SettingsIcon, BarChart3, Menu, X, LogOut, Download, FolderOpen } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Toast from './components/Toast'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -24,7 +24,6 @@ function NavBar({ user, onLogout }: NavBarProps) {
 
   const navItems = [
     { path: '/', label: '音频管理', icon: Home },
-    { path: '/tasks', label: '标注任务', icon: User },
     { path: '/projects', label: '项目管理', icon: FolderOpen },
     { path: '/dashboard', label: '统计分析', icon: BarChart3 },
     { path: '/export', label: '数据导出', icon: Download },

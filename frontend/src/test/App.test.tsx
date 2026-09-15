@@ -10,6 +10,15 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 })
 
+// All navigation routes from the navbar
+const ROUTES = [
+  { path: '/', name: 'AudioList' },
+  { path: '/projects', name: 'Projects' },
+  { path: '/dashboard', name: 'Dashboard' },
+  { path: '/export', name: 'Export' },
+  { path: '/settings', name: 'Settings' },
+]
+
 describe('App Console Errors', () => {
   it('should not produce console errors on route navigation', async () => {
     const consoleErrors: string[] = []
@@ -23,24 +32,15 @@ describe('App Console Errors', () => {
       }
     }
 
-    render(
-      <MemoryRouter initialEntries={['/login']}>
-        <App />
-      </MemoryRouter>
-    )
-
-    // Wait for initial render
-    await new Promise(r => setTimeout(r, 500))
-
-    // Navigate to dashboard (should redirect to login since not authenticated)
-    // Use MemoryRouter with proper routes
-    render(
-      <MemoryRouter initialEntries={['/dashboard']}>
-        <App />
-      </MemoryRouter>
-    )
-
-    await new Promise(r => setTimeout(r, 500))
+    // Test each route
+    for (const { path } of ROUTES) {
+      render(
+        <MemoryRouter initialEntries={[path]}>
+          <App />
+        </MemoryRouter>
+      )
+      await new Promise(r => setTimeout(r, 300))
+    }
 
     // Restore console.error
     console.error = originalError
