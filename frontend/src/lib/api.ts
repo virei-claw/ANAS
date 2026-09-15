@@ -40,10 +40,12 @@ export interface DictItem {
 }
 
 export const audioApi = {
-  upload: (file: File) => {
+  upload: (file: File, options?: { onUploadProgress?: (progressEvent: { loaded: number; total: number }) => void }) => {
     const formData = new FormData()
     formData.append('file', file)
-    return api.post<AudioFile>('/audio/upload', formData)
+    return api.post<AudioFile>('/audio/upload', formData, {
+      onUploadProgress: options?.onUploadProgress,
+    })
   },
   list: (page = 1, pageSize = 20, search?: string) => {
     return api.get<{ items: AudioFile[]; total: number; page: number; page_size: number }>('/audio', {

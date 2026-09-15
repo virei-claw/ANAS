@@ -12,15 +12,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 cd backend
 pip install -r requirements.txt
-python run.py        # 启动开发服务器 (http://localhost:8000)
+pytest                    # 运行测试（需先安装 pytest）
+python run.py             # 启动开发服务器 (http://localhost:8000)
 ```
 
 ### 前端 (React + Vite)
 ```bash
 cd frontend
 npm install
-npm run dev          # 启动开发服务器 (http://localhost:3000)
-npm run build        # 生产构建
+npm run dev               # 启动开发服务器 (http://localhost:3000)
+npm run build             # 生产构建
+```
+
+### 环境配置
+后端根目录创建 `.env` 文件:
+```env
+DATABASE_URL=postgresql://postgres:<password>@localhost:5432/audioDataSets
+```
+
+### 数据流架构
+```
+音频上传 → FastAPI → PostgreSQL (元数据) + 文件系统 (原始音频)
+                              ↓
+前端请求 → API → SQLAlchemy ORM → 数据库
+                     ↓
+            WaveSurfer.js 可视化播放
 ```
 
 ### 依赖版本要求
