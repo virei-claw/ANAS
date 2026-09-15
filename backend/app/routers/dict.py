@@ -5,7 +5,9 @@ from typing import List
 
 from app.database import get_db
 from app.models.dict import PartName, NoiseType, RoadType
+from app.models.user import User
 from app.schemas.dict import DictItemCreate, DictItemResponse
+from app.routers.auth import get_current_user
 
 router = APIRouter(prefix="/dict", tags=["dict"])
 
@@ -15,7 +17,11 @@ def list_part_names(db: Session = Depends(get_db)):
     return db.query(PartName).all()
 
 @router.post("/part-names", response_model=DictItemResponse)
-def create_part_name(data: DictItemCreate, db: Session = Depends(get_db)):
+def create_part_name(
+    data: DictItemCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     existing = db.query(PartName).filter(PartName.name == data.name).first()
     if existing:
         raise HTTPException(status_code=400, detail="Already exists")
@@ -26,7 +32,11 @@ def create_part_name(data: DictItemCreate, db: Session = Depends(get_db)):
     return item
 
 @router.delete("/part-names/{item_id}")
-def delete_part_name(item_id: uuid.UUID, db: Session = Depends(get_db)):
+def delete_part_name(
+    item_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     item = db.query(PartName).filter(PartName.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Not found")
@@ -40,7 +50,11 @@ def list_noise_types(db: Session = Depends(get_db)):
     return db.query(NoiseType).all()
 
 @router.post("/noise-types", response_model=DictItemResponse)
-def create_noise_type(data: DictItemCreate, db: Session = Depends(get_db)):
+def create_noise_type(
+    data: DictItemCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     existing = db.query(NoiseType).filter(NoiseType.name == data.name).first()
     if existing:
         raise HTTPException(status_code=400, detail="Already exists")
@@ -51,7 +65,11 @@ def create_noise_type(data: DictItemCreate, db: Session = Depends(get_db)):
     return item
 
 @router.delete("/noise-types/{item_id}")
-def delete_noise_type(item_id: uuid.UUID, db: Session = Depends(get_db)):
+def delete_noise_type(
+    item_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     item = db.query(NoiseType).filter(NoiseType.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Not found")
@@ -65,7 +83,11 @@ def list_road_types(db: Session = Depends(get_db)):
     return db.query(RoadType).all()
 
 @router.post("/road-types", response_model=DictItemResponse)
-def create_road_type(data: DictItemCreate, db: Session = Depends(get_db)):
+def create_road_type(
+    data: DictItemCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     existing = db.query(RoadType).filter(RoadType.name == data.name).first()
     if existing:
         raise HTTPException(status_code=400, detail="Already exists")
@@ -76,7 +98,11 @@ def create_road_type(data: DictItemCreate, db: Session = Depends(get_db)):
     return item
 
 @router.delete("/road-types/{item_id}")
-def delete_road_type(item_id: uuid.UUID, db: Session = Depends(get_db)):
+def delete_road_type(
+    item_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     item = db.query(RoadType).filter(RoadType.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Not found")

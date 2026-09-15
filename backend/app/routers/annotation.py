@@ -6,12 +6,18 @@ from typing import Optional, List
 from app.database import get_db
 from app.models.annotation import Annotation
 from app.models.dict import PartName, NoiseType, RoadType
+from app.models.user import User
 from app.schemas.annotation import AnnotationCreate, AnnotationUpdate, AnnotationResponse
+from app.routers.auth import get_current_user
 
 router = APIRouter(prefix="/annotations", tags=["annotations"])
 
 @router.post("", response_model=AnnotationResponse)
-def create_annotation(data: AnnotationCreate, db: Session = Depends(get_db)):
+def create_annotation(
+    data: AnnotationCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     annotation = Annotation(**data.model_dump())
     db.add(annotation)
     db.commit()
@@ -26,7 +32,8 @@ def create_annotation(data: AnnotationCreate, db: Session = Depends(get_db)):
 @router.get("", response_model=List[AnnotationResponse])
 def list_annotations(
     audio_id: Optional[uuid.UUID] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     query = db.query(Annotation)
     if audio_id:
@@ -44,7 +51,11 @@ def list_annotations(
     return result
 
 @router.get("/{annotation_id}", response_model=AnnotationResponse)
-def get_annotation(annotation_id: uuid.UUID, db: Session = Depends(get_db)):
+def get_annotation(
+    annotation_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     annotation = db.query(Annotation).filter(Annotation.id == annotation_id).first()
     if not annotation:
         raise HTTPException(status_code=404, detail="Annotation not found")
@@ -56,7 +67,12 @@ def get_annotation(annotation_id: uuid.UUID, db: Session = Depends(get_db)):
     )
 
 @router.put("/{annotation_id}", response_model=AnnotationResponse)
-def update_annotation(annotation_id: uuid.UUID, data: AnnotationUpdate, db: Session = Depends(get_db)):
+def update_annotation(
+    annotation_id: uuid.UUID,
+    data: AnnotationUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     annotation = db.query(Annotation).filter(Annotation.id == annotation_id).first()
     if not annotation:
         raise HTTPException(status_code=404, detail="Annotation not found")
@@ -74,7 +90,11 @@ def update_annotation(annotation_id: uuid.UUID, data: AnnotationUpdate, db: Sess
     )
 
 @router.delete("/{annotation_id}")
-def delete_annotation(annotation_id: uuid.UUID, db: Session = Depends(get_db)):
+def delete_annotation(
+    annotation_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     annotation = db.query(Annotation).filter(Annotation.id == annotation_id).first()
     if not annotation:
         raise HTTPException(status_code=404, detail="Annotation not found")

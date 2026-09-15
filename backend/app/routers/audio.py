@@ -8,12 +8,18 @@ from pydub import AudioSegment
 
 from app.database import get_db
 from app.models.audio import AudioFile
+from app.models.user import User
 from app.schemas.audio import AudioFileResponse, AudioFileList
+from app.routers.auth import get_current_user
 
 router = APIRouter(prefix="/audio", tags=["audio"])
 
 @router.post("/upload", response_model=AudioFileResponse)
-async def upload_audio(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_audio(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename")
 
@@ -83,7 +89,11 @@ def get_audio(audio_id: uuid.UUID, db: Session = Depends(get_db)):
     return audio
 
 @router.delete("/{audio_id}")
-def delete_audio(audio_id: uuid.UUID, db: Session = Depends(get_db)):
+def delete_audio(
+    audio_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     audio = db.query(AudioFile).filter(AudioFile.id == audio_id).first()
     if not audio:
         raise HTTPException(status_code=404, detail="Audio not found")
@@ -100,7 +110,8 @@ def clip_audio(
     audio_id: uuid.UUID,
     start_time: float,
     end_time: float,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """裁剪音频片段并保存为独立文件"""
     audio = db.query(AudioFile).filter(AudioFile.id == audio_id).first()

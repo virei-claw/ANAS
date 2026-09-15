@@ -4,6 +4,28 @@ const api = axios.create({
   baseURL: '/api',
 })
 
+// 请求拦截器：自动附加 token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+// 响应拦截器：处理 401 未授权
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)
+
 export interface AudioFile {
   id: string
   filename: string
@@ -37,6 +59,29 @@ export interface Annotation {
 export interface DictItem {
   id: string
   name: string
+}
+
+export interface User {
+  id: string
+  username: string
+  email: string
+  full_name?: string
+}
+
+export interface LoginResponse {
+  access_token: string
+  token_type: string
+  user: User
+}
+
+export const authApi = {
+  login: (username: string, password: string) =>
+    api.post<LoginResponse>('/auth/login', new URLSearchParams({ username, password }).toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    }),
+  register: (data: { username: string; email: string; password: string; full_name?: string }) =>
+    api.post<User>('/auth/register', data),
+  getCurrentUser: () => api.get<User>('/auth/me'),
 }
 
 export const audioApi = {
