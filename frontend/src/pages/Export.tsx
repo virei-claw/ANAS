@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Download, FileText, FileJson } from 'lucide-react'
+import { FileText, FileJson } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
 

@@ -164,15 +164,13 @@ function App() {
         <NavBar user={user} onLogout={handleLogout} />
         <Routes>
           <Route path="/login" element={<Login />} />
-          <ProtectedRoute>
-            <Route path="/" element={<AudioList />} />
-            <Route path="/audio/:id" element={<AudioDetail />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/review" element={<ReviewQueue />} />
-            <Route path="/export" element={<Export />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-          </ProtectedRoute>
+          <Route path="/" element={<ProtectedRoute><AudioList /></ProtectedRoute>} />
+          <Route path="/audio/:id" element={<ProtectedRoute><AudioDetail /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/review" element={<ProtectedRoute><ReviewQueue /></ProtectedRoute>} />
+          <Route path="/export" element={<ProtectedRoute><Export /></ProtectedRoute>} />
+          <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         </Routes>
       </div>
     </>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BarChart3, AudioLines, FileText, CheckCircle, Clock, XCircle, TrendingUp } from 'lucide-react'
+import { AudioLines, FileText, Clock, TrendingUp } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
 
@@ -125,7 +125,7 @@ export default function Dashboard() {
                 <div className="w-32 bg-gray-200 rounded-full h-2">
                   <div
                     className="bg-indigo-600 h-2 rounded-full"
-                    style={{ width: `${Math.min(100, (count / stats.part_stats[0].count) * 100}%` }}
+                    style={{ width: `${Math.min(100, (count / stats.part_stats[0].count) * 100)}%` }}
                   />
                 </div>
                 <span className="font-medium w-8 text-right">{count}</span>

@@ -150,7 +150,7 @@ export default function AudioList() {
     if (selectedIds.size === audios.length) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(audios.map(a => a.id))
+      setSelectedIds(new Set(audios.map(a => a.id)))
     }
   }
 
