@@ -1,5 +1,5 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom'
-import { Home, Settings, BarChart3, User, LogOut, Menu, X } from 'lucide-react'
+import { Home, Settings, BarChart3, User, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import Toast from './components/Toast'
 import AudioList from './pages/AudioList'

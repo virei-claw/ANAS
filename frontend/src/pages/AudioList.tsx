@@ -107,7 +107,7 @@ export default function AudioList() {
     try {
       await audioApi.upload(file, {
         onUploadProgress: (progressEvent) => {
-          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          const percent = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1))
           setUploadProgress(percent)
         },
       })

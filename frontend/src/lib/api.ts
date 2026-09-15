@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { AxiosProgressEvent } from 'axios'
 
 const api = axios.create({
   baseURL: '/api',
@@ -40,7 +40,7 @@ export interface DictItem {
 }
 
 export const audioApi = {
-  upload: (file: File, options?: { onUploadProgress?: (progressEvent: { loaded: number; total: number }) => void }) => {
+  upload: (file: File, options?: { onUploadProgress?: (progressEvent: AxiosProgressEvent) => void }) => {
     const formData = new FormData()
     formData.append('file', file)
     return api.post<AudioFile>('/audio/upload', formData, {
