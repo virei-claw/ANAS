@@ -12,24 +12,31 @@ import Export from './pages/Export'
 import Projects from './pages/Projects'
 import Dashboard from './pages/Dashboard'
 import Import from './pages/Import'
+import { annotationApi } from './lib/api'
 
 // 导航栏组件
 interface NavBarProps {
-  user?: { username: string; full_name?: string } | null
+  user?: { username: string; full_name?: string; roles?: { name: string }[] } | null
   onLogout?: () => void
+  pendingCount?: number
 }
 
-function NavBar({ user, onLogout }: NavBarProps) {
+function NavBar({ user, onLogout, pendingCount = 0 }: NavBarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
+
+  // 判断是否为管理员
+  const isAdmin = user?.roles?.some(r => r.name === 'admin') || false
 
   const navItems = [
     { path: '/', label: '音频管理', icon: Home },
     { path: '/projects', label: '项目管理', icon: FolderOpen },
-    { path: '/review', label: '审核队列', icon: User },
+    // 仅管理员显示审核队列
+    ...(isAdmin ? [{ path: '/review', label: '审核队列', icon: User, badge: pendingCount }] : []),
     { path: '/dashboard', label: '统计分析', icon: BarChart3 },
     { path: '/export', label: '数据导出', icon: Download },
     { path: '/import', label: '批量导入', icon: Upload },
+    // 仅管理员显示设置中的用户管理
     { path: '/settings', label: '设置', icon: SettingsIcon },
   ]
 
@@ -49,7 +56,7 @@ function NavBar({ user, onLogout }: NavBarProps) {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-1">
-            {navItems.map(({ path, label, icon: Icon }) => (
+            {navItems.map(({ path, label, icon: Icon, badge }) => (
               <Link
                 key={path}
                 to={path}
@@ -61,6 +68,11 @@ function NavBar({ user, onLogout }: NavBarProps) {
               >
                 <Icon size={18} />
                 {label}
+                {badge !== undefined && badge > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 text-xs font-medium bg-red-500 text-white rounded-full">
+                    {badge > 99 ? '99+' : badge}
+                  </span>
+                )}
               </Link>
             ))}
           </div>
@@ -103,7 +115,7 @@ function NavBar({ user, onLogout }: NavBarProps) {
         {/* Mobile Nav */}
         {mobileOpen && (
           <div className="md:hidden pb-4">
-            {navItems.map(({ path, label, icon: Icon }) => (
+            {navItems.map(({ path, label, icon: Icon, badge }) => (
               <Link
                 key={path}
                 to={path}
@@ -116,6 +128,11 @@ function NavBar({ user, onLogout }: NavBarProps) {
               >
                 <Icon size={18} />
                 {label}
+                {badge !== undefined && badge > 0 && (
+                  <span className="ml-auto px-1.5 py-0.5 text-xs font-medium bg-red-500 text-white rounded-full">
+                    {badge > 99 ? '99+' : badge}
+                  </span>
+                )}
               </Link>
             ))}
             {user ? (
@@ -141,15 +158,27 @@ function NavBar({ user, onLogout }: NavBarProps) {
 }
 
 function App() {
-  const [user, setUser] = useState<{ username: string; full_name?: string } | null>(null)
+  const [user, setUser] = useState<{ username: string; full_name?: string; roles?: { name: string }[] } | null>(null)
+  const [pendingCount, setPendingCount] = useState(0)
   const navigate = useNavigate()
   const location = useLocation()
+
+  // 获取待审核数量
+  const fetchPendingCount = async () => {
+    try {
+      const res = await annotationApi.listPending()
+      setPendingCount(res.data.length)
+    } catch {
+      // ignore
+    }
+  }
 
   useEffect(() => {
     // 检查登录状态
     const userStr = localStorage.getItem('user')
     if (userStr) {
       setUser(JSON.parse(userStr))
+      fetchPendingCount()
     }
   }, [location.pathname])
 
@@ -164,7 +193,7 @@ function App() {
     <>
       <Toast />
       <div className="min-h-screen bg-gray-50">
-        <NavBar user={user} onLogout={handleLogout} />
+        <NavBar user={user} onLogout={handleLogout} pendingCount={pendingCount} />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<ProtectedRoute><AudioList /></ProtectedRoute>} />

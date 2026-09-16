@@ -3,6 +3,16 @@ import { dictApi, userApi, DictItem, User, Role } from '@/lib/api'
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState<'dict' | 'users'>('dict')
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    const userStr = localStorage.getItem('user')
+    if (userStr) {
+      const userData = JSON.parse(userStr)
+      const admin = userData.roles?.some((r: { name: string }) => r.name === 'admin')
+      setIsAdmin(admin)
+    }
+  }, [])
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -15,16 +25,18 @@ export default function Settings() {
         >
           字典管理
         </button>
-        <button
-          onClick={() => setActiveTab('users')}
-          className={`px-4 py-2 ${activeTab === 'users' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-500'}`}
-        >
-          用户管理
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`px-4 py-2 ${activeTab === 'users' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-500'}`}
+          >
+            用户管理
+          </button>
+        )}
       </div>
 
       {activeTab === 'dict' && <DictManagement />}
-      {activeTab === 'users' && <UserManagement />}
+      {activeTab === 'users' && isAdmin && <UserManagement />}
     </div>
   )
 }

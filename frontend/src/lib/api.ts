@@ -166,6 +166,7 @@ export interface ImportResult {
 export const annotationApi = {
   create: (data: Partial<Annotation>) => api.post<Annotation>('/annotations', data),
   list: (audioId?: string) => api.get<Annotation[]>('/annotations', { params: { audio_id: audioId } }),
+  listPending: () => api.get<Annotation[]>('/annotations/pending'),
   get: (id: string) => api.get<Annotation>(`/annotations/${id}`),
   update: (id: string, data: Partial<Annotation>) => api.put<Annotation>(`/annotations/${id}`, data),
   delete: (id: string) => api.delete(`/annotations/${id}`),

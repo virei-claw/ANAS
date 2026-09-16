@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
 
@@ -18,6 +18,21 @@ interface PendingAnnotation {
 export default function ReviewQueue() {
   const [annotations, setAnnotations] = useState<PendingAnnotation[]>([])
   const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const userStr = localStorage.getItem('user')
+    if (userStr) {
+      const userData = JSON.parse(userStr)
+      const isAdmin = userData.roles?.some((r: { name: string }) => r.name === 'admin')
+      if (!isAdmin) {
+        navigate('/')
+        toast.error('无权限访问')
+      }
+    } else {
+      navigate('/login')
+    }
+  }, [navigate])
 
   const loadPending = async () => {
     setLoading(true)
