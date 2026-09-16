@@ -96,9 +96,9 @@ export const audioApi = {
       onUploadProgress: options?.onUploadProgress,
     })
   },
-  list: (page = 1, pageSize = 20, search?: string) => {
+  list: (page = 1, pageSize = 20, search?: string, filter?: string) => {
     return api.get<{ items: AudioFile[]; total: number; page: number; page_size: number }>('/audio', {
-      params: { page, page_size: pageSize, search },
+      params: { page, page_size: pageSize, search, filter },
     })
   },
   get: (id: string) => api.get<AudioFile>(`/audio/${id}`),

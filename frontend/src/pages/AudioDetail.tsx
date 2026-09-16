@@ -62,7 +62,7 @@ export default function AudioDetail() {
 
       {showForm && selectedRegion && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="w-full max-w-2xl">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl">
             <AnnotationForm
               audioId={id!}
               startTime={selectedRegion.start}
@@ -92,6 +92,7 @@ export default function AudioDetail() {
                 <th className="py-2">温度</th>
                 <th className="py-2">场景</th>
                 <th className="py-2">时间段</th>
+                <th className="py-2">标注用户</th>
                 <th className="py-2">操作</th>
               </tr>
             </thead>
@@ -104,8 +105,8 @@ export default function AudioDetail() {
                   <td className="py-2">{ann.speed ?? '-'}</td>
                   <td className="py-2">{ann.temperature ?? '-'}</td>
                   <td className="py-2">{ann.test_mode === 'dynamic' ? '动态' : '静态'}</td>
-                  <td className="py-2">{ann.annotator_name || '未知'}</td>
                   <td className="py-2 font-mono text-sm">{formatTime(ann.start_time)} - {formatTime(ann.end_time)}</td>
+                  <td className="py-2">{ann.annotator_name || '未知'}</td>
                   <td className="py-2">
                     <button
                       onClick={async () => {

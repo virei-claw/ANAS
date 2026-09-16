@@ -43,6 +43,39 @@ async def test_audio_list_search():
 
 
 @pytest.mark.asyncio
+async def test_audio_list_filter_annotated():
+    """Test audio list with annotated filter."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/audio?filter=annotated")
+        assert response.status_code == 200
+        data = response.json()
+        assert "items" in data
+
+
+@pytest.mark.asyncio
+async def test_audio_list_filter_unannotated():
+    """Test audio list with unannotated filter."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/audio?filter=unannotated")
+        assert response.status_code == 200
+        data = response.json()
+        assert "items" in data
+
+
+@pytest.mark.asyncio
+async def test_audio_list_filter_reviewing():
+    """Test audio list with reviewing filter."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/audio?filter=reviewing")
+        assert response.status_code == 200
+        data = response.json()
+        assert "items" in data
+
+
+@pytest.mark.asyncio
 async def test_audio_get_not_found():
     """Test getting non-existent audio returns 404."""
     transport = ASGITransport(app=app)

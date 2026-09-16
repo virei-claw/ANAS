@@ -59,17 +59,39 @@ def list_audio(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     search: Optional[str] = None,
+    filter: Optional[str] = Query(None, description="Filter: annotated, unannotated, reviewing"),
     db: Session = Depends(get_db)
 ):
-    query = db.query(AudioFile).options(joinedload(AudioFile.uploader))
+    from app.models.annotation import Annotation
+    from app.models.user import User
+
+    # Base query for audio files with uploader
+    base_filter = None
+    if filter == "annotated":
+        # Has at least one annotation that is not draft
+        annotated_ids = db.query(Annotation.audio_id).filter(Annotation.status != 'draft').distinct().subquery()
+        base_filter = AudioFile.id.in_(db.query(annotated_ids.c.audio_id))
+    elif filter == "unannotated":
+        # Has no annotations at all
+        annotated_ids = db.query(Annotation.audio_id).distinct().subquery()
+        base_filter = ~AudioFile.id.in_(db.query(annotated_ids))
+    elif filter == "reviewing":
+        # Has at least one annotation with status = submitted
+        reviewing_ids = db.query(Annotation.audio_id).filter(Annotation.status == 'submitted').distinct().subquery()
+        base_filter = AudioFile.id.in_(db.query(reviewing_ids.c.audio_id))
+
+    query = db.query(AudioFile)
     if search:
         query = query.filter(AudioFile.filename.contains(search))
+    if base_filter is not None:
+        query = query.filter(base_filter)
 
     total = query.count()
     items = query.order_by(AudioFile.created_at.desc()).offset((page-1)*page_size).limit(page_size).all()
 
     result = []
     for item in items:
+        uploader = db.query(User).filter(User.id == item.uploader_id).first() if item.uploader_id else None
         result.append(AudioFileResponse(
             id=item.id,
             filename=item.filename,
@@ -78,7 +100,7 @@ def list_audio(
             sample_rate=item.sample_rate,
             file_size=item.file_size,
             uploader_id=item.uploader_id,
-            uploader_name=item.uploader.full_name or item.uploader.username if item.uploader else None,
+            uploader_name=uploader.full_name or uploader.username if uploader else None,
             created_at=item.created_at
         ))
     return AudioFileList(items=result, total=total, page=page, page_size=page_size)

@@ -86,7 +86,7 @@ export default function AudioList() {
   const loadAudios = async () => {
     setLoading(true)
     try {
-      const res = await audioApi.list(currentPage, pageSize, search || undefined)
+      const res = await audioApi.list(currentPage, pageSize, search || undefined, filter === 'all' ? undefined : filter)
       setAudios(res.data.items)
       setTotal(res.data.total)
     } catch (error) {
