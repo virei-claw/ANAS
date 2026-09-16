@@ -23,7 +23,7 @@ export default function ReviewQueue() {
     setLoading(true)
     try {
       const response = await api.get('/annotations/pending')
-      setAnnotations(response.data.items)
+      setAnnotations(response.data)
     } catch (error: any) {
       toast.error('加载失败')
     } finally {
