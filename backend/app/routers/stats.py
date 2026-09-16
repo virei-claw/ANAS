@@ -1,6 +1,7 @@
 """
 统计 API
 """
+from typing import Optional
 from fastapi import APIRouter, Depends
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -83,3 +84,29 @@ def get_dashboard_stats(
         "part_stats": [{"name": p, "count": c} for p, c in part_stats],
         "daily_trend": [{"date": str(d), "count": c} for d, c in daily_trend],
     }
+
+
+@router.get("/user-workload")
+def get_user_workload_stats(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """按用户统计标注工作量"""
+    query = db.query(
+        User.id,
+        User.username,
+        User.full_name,
+        func.count(Annotation.id).label('annotation_count')
+    ).outerjoin(Annotation, Annotation.annotator_id == User.id
+    ).group_by(User.id, User.username, User.full_name)
+
+    # 可选日期过滤
+    if start_date:
+        query = query.filter(Annotation.created_at >= start_date)
+    if end_date:
+        query = query.filter(Annotation.created_at <= end_date)
+
+    results = query.all()
+    return [{"user_id": r[0], "username": r[1], "full_name": r[2], "count": r[3]} for r in results]

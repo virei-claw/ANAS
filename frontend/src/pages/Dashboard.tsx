@@ -19,8 +19,16 @@ interface DashboardStats {
   daily_trend: { date: string; count: number }[]
 }
 
+interface UserWorkload {
+  user_id: number
+  username: string
+  full_name: string
+  count: number
+}
+
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [userWorkload, setUserWorkload] = useState<UserWorkload[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -30,8 +38,12 @@ export default function Dashboard() {
   const loadStats = async () => {
     setLoading(true)
     try {
-      const resp = await api.get('/stats/dashboard')
-      setStats(resp.data)
+      const [statsResp, workloadResp] = await Promise.all([
+        api.get('/stats/dashboard'),
+        api.get('/stats/user-workload')
+      ])
+      setStats(statsResp.data)
+      setUserWorkload(workloadResp.data)
     } catch {
       toast.error('加载失败')
     } finally {
@@ -131,6 +143,39 @@ export default function Dashboard() {
                 <span className="font-medium w-8 text-right">{count}</span>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* 用户工作量排行榜 */}
+      <div className="bg-white rounded-xl shadow p-6">
+        <h3 className="font-semibold mb-4">用户工作量排行</h3>
+        {userWorkload.length === 0 ? (
+          <p className="text-gray-500 text-sm">暂无数据</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-2 px-3 text-gray-500 font-medium">排名</th>
+                  <th className="text-left py-2 px-3 text-gray-500 font-medium">用户名</th>
+                  <th className="text-left py-2 px-3 text-gray-500 font-medium">姓名</th>
+                  <th className="text-right py-2 px-3 text-gray-500 font-medium">标注数量</th>
+                </tr>
+              </thead>
+              <tbody>
+                {userWorkload
+                  .sort((a, b) => b.count - a.count)
+                  .map(({ user_id, username, full_name, count }, idx) => (
+                    <tr key={user_id} className="border-b last:border-0">
+                      <td className="py-2 px-3 text-gray-400">{idx + 1}</td>
+                      <td className="py-2 px-3">{username}</td>
+                      <td className="py-2 px-3">{full_name || '-'}</td>
+                      <td className="py-2 px-3 text-right font-medium">{count}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

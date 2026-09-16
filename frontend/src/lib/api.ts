@@ -52,12 +52,23 @@ export interface Annotation {
   start_time: number
   end_time: number
   clip_filepath: string | null
+  status: string
   created_at: string
   part_name: string | null
   noise_type: string | null
   road_type: string | null
   annotator_id?: string
   annotator_name?: string
+}
+
+export interface AnnotationHistory {
+  id: string
+  annotation_id: string
+  version: number
+  data: Record<string, any>
+  changed_by: string | null
+  change_reason: string | null
+  created_at: string
 }
 
 export interface DictItem {
@@ -70,12 +81,28 @@ export interface User {
   username: string
   email: string
   full_name?: string
+  is_active?: boolean
+  created_at?: string
+  roles?: Role[]
+}
+
+export interface Role {
+  id: string
+  name: string
+  description?: string
 }
 
 export interface LoginResponse {
   access_token: string
   token_type: string
   user: User
+}
+
+export interface UserListResponse {
+  items: User[]
+  total: number
+  page: number
+  page_size: number
 }
 
 export const authApi = {
@@ -86,6 +113,23 @@ export const authApi = {
   register: (data: { username: string; email: string; password: string; full_name?: string }) =>
     api.post<User>('/auth/register', data),
   getCurrentUser: () => api.get<User>('/auth/me'),
+}
+
+export const userApi = {
+  list: (page = 1, pageSize = 20, search?: string) => {
+    return api.get<UserListResponse>('/users', {
+      params: { page, page_size: pageSize, search },
+    })
+  },
+  get: (id: string) => api.get<User>(`/users/${id}`),
+  create: (data: { username: string; email: string; password: string; full_name?: string }) =>
+    api.post<User>('/users', data),
+  update: (id: string, data: { email?: string; full_name?: string; is_active?: boolean }) =>
+    api.put<User>(`/users/${id}`, data),
+  delete: (id: string) => api.delete(`/users/${id}`),
+  assignRoles: (id: string, roleNames: string[]) =>
+    api.put<User>(`/users/${id}/roles`, { role_names: roleNames }),
+  listRoles: () => api.get<Role[]>('/users/roles'),
 }
 
 export const audioApi = {
@@ -112,12 +156,29 @@ export const audioApi = {
   streamClipUrl: (clipFilepath: string) => `/api/audio/clip/${encodeURIComponent(clipFilepath)}`,
 }
 
+export interface ImportResult {
+  total: number
+  success: number
+  failed: number
+  errors: { row: number; message: string }[]
+}
+
 export const annotationApi = {
   create: (data: Partial<Annotation>) => api.post<Annotation>('/annotations', data),
   list: (audioId?: string) => api.get<Annotation[]>('/annotations', { params: { audio_id: audioId } }),
   get: (id: string) => api.get<Annotation>(`/annotations/${id}`),
   update: (id: string, data: Partial<Annotation>) => api.put<Annotation>(`/annotations/${id}`, data),
   delete: (id: string) => api.delete(`/annotations/${id}`),
+  submit: (id: string) => api.put(`/annotations/${id}/submit`),
+  batchSubmit: (ids: string[]) => api.post('/annotations/batch-submit', { annotation_ids: ids }),
+  getHistory: (annotationId: string) => api.get<AnnotationHistory[]>(`/annotations/${annotationId}/history`),
+  import: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post<ImportResult>('/annotations/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
 }
 
 export const dictApi = {

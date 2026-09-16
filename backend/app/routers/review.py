@@ -1,9 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from datetime import datetime
+import json
+import uuid
 from app.database import get_db
 from app.models.user import User
 from app.models.annotation import Annotation
+from app.models.annotation_history import AnnotationHistory
 from app.routers.auth import get_current_user
 
 router = APIRouter(prefix="/annotations", tags=["review"])
@@ -44,6 +47,20 @@ def approve_annotation(
     if not annotation:
         raise HTTPException(status_code=404, detail="标注不存在")
 
+    # 记录历史
+    history = AnnotationHistory(
+        id=str(uuid.uuid4()),
+        annotation_id=str(annotation_id),
+        version=1,
+        data=json.dumps({
+            "status": "approved",
+            "reviewed_by": str(current_user.id)
+        }),
+        changed_by=str(current_user.id),
+        change_reason="审核通过"
+    )
+    db.add(history)
+
     annotation.status = 'approved'
     annotation.reviewed_by = current_user.id
     annotation.reviewed_at = datetime.utcnow()
@@ -63,6 +80,21 @@ def reject_annotation(
     if not annotation:
         raise HTTPException(status_code=404, detail="标注不存在")
 
+    # 记录历史
+    history = AnnotationHistory(
+        id=str(uuid.uuid4()),
+        annotation_id=str(annotation_id),
+        version=1,
+        data=json.dumps({
+            "status": "rejected",
+            "reject_reason": reject_reason,
+            "reviewed_by": str(current_user.id)
+        }),
+        changed_by=str(current_user.id),
+        change_reason=f"审核打回: {reject_reason}"
+    )
+    db.add(history)
+
     annotation.status = 'rejected'
     annotation.reviewed_by = current_user.id
     annotation.reviewed_at = datetime.utcnow()
@@ -71,15 +103,28 @@ def reject_annotation(
     return {"message": "已打回"}
 
 
-@router.get("/pending")
-def list_pending_annotations(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+@router.get("/{annotation_id}/history")
+def get_annotation_history(
+    annotation_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_reviewer)
+    current_user: User = Depends(get_current_user)
 ):
-    """获取待审核列表"""
-    query = db.query(Annotation).filter(Annotation.status == 'submitted')
-    total = query.count()
-    items = query.offset((page-1)*page_size).limit(page_size).all()
-    return {"items": items, "total": total, "page": page, "page_size": page_size}
+    """获取标注审核历史"""
+    # 检查标注是否存在
+    annotation = db.query(Annotation).filter(Annotation.id == str(annotation_id)).first()
+    if not annotation:
+        raise HTTPException(status_code=404, detail="标注不存在")
+
+    history = db.query(AnnotationHistory).filter(
+        AnnotationHistory.annotation_id == str(annotation_id)
+    ).order_by(AnnotationHistory.created_at.desc()).all()
+
+    return [{
+        "id": h.id,
+        "annotation_id": h.annotation_id,
+        "version": h.version,
+        "data": json.loads(h.data) if h.data else {},
+        "changed_by": h.changed_by,
+        "change_reason": h.change_reason,
+        "created_at": h.created_at.isoformat() if h.created_at else None
+    } for h in history]

@@ -74,20 +74,16 @@ async def test_reject_requires_admin():
 
 
 @pytest.mark.asyncio
-async def test_pending_list_requires_admin():
-    """Test that pending list requires admin role."""
+async def test_pending_list_accessible_by_authenticated_user():
+    """Test that pending list is accessible by authenticated user (not admin only."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         token = await get_auth_token(client, "pendingtest1")
-
-        # Note: Route /pending may conflict with /{annotation_id} in annotation router
-        # Returns 422 if "pending" is treated as annotation_id (UUID parse error)
         response = await client.get(
-            "/api/annotations/pending?page=1&page_size=20",
+            "/api/annotations/pending",
             headers={"Authorization": f"Bearer {token}"}
         )
-        # Expected: 403 for proper admin check, but may get 422 due to route conflict
-        assert response.status_code in [403, 422]
+        assert response.status_code == 200
 
 
 @pytest.mark.asyncio
@@ -101,3 +97,37 @@ async def test_annotation_status_transitions():
         assert hasattr(Annotation, 'submitted_at')
         assert hasattr(Annotation, 'reviewed_by')
         assert hasattr(Annotation, 'reject_reason')
+
+
+@pytest.mark.asyncio
+async def test_get_annotation_history():
+    """Test getting annotation review history."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        token = await get_auth_token(client, "historytest1")
+        test_uuid = "00000000-0000-0000-0000-000000000000"
+
+        # Endpoint should exist - returns 404 for non-existent annotation (correct behavior)
+        response = await client.get(
+            f"/api/annotations/{test_uuid}/history",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        # 404 = endpoint exists + annotation not found (correct RESTful behavior)
+        assert response.status_code == 404
+        assert response.json()["detail"] == "标注不存在"
+
+
+@pytest.mark.asyncio
+async def test_history_accessible_by_authenticated_user():
+    """Test that history endpoint is accessible by authenticated user."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        token = await get_auth_token(client, "historytest2")
+        test_uuid = "00000000-0000-0000-0000-000000000000"
+
+        response = await client.get(
+            f"/api/annotations/{test_uuid}/history",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        # Should be 404 (not 401/403) - endpoint exists and requires auth
+        assert response.status_code == 404

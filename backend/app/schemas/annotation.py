@@ -43,6 +43,7 @@ class AnnotationResponse(BaseModel):
     start_time: float
     end_time: float
     clip_filepath: Optional[str] = None
+    status: str
     created_at: datetime
     part_name: Optional[str] = None
     noise_type: Optional[str] = None

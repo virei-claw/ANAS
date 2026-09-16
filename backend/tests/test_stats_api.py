@@ -47,3 +47,37 @@ async def test_stats_with_auth():
         assert "noise_type_stats" in data
         assert "part_stats" in data
         assert "daily_trend" in data
+
+
+@pytest.mark.asyncio
+async def test_user_workload_stats_requires_auth():
+    """Test user workload endpoint requires auth."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/stats/user-workload")
+        assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_user_workload_stats_with_auth():
+    """Test user workload endpoint returns per-user annotation counts."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        # Create two users
+        token1 = await get_auth_token(client, "workloaduser1")
+        token2 = await get_auth_token(client, "workloaduser2")
+
+        # Get stats for all users
+        response = await client.get("/api/stats/user-workload",
+            headers={"Authorization": f"Bearer {token1}"})
+        assert response.status_code == 200
+        data = response.json()
+
+        # Verify response is a list
+        assert isinstance(data, list)
+        # Each item should have user_id, username, full_name, count
+        for item in data:
+            assert "user_id" in item
+            assert "username" in item
+            assert "full_name" in item
+            assert "count" in item

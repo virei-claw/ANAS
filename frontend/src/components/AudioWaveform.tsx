@@ -20,6 +20,8 @@ export default function AudioWaveform({ audioUrl, onRegionSave }: AudioWaveformP
   const [error, setError] = useState<string | null>(null)
   const [region, setRegion] = useState<{ start: number; end: number } | null>(null)
   const [showSpectrogram, setShowSpectrogram] = useState(false)
+  const [playbackRate, setPlaybackRate] = useState(1)
+  const [isLooping, setIsLooping] = useState(false)
 
   useEffect(() => {
     if (!containerRef.current || !audioUrl) return
@@ -59,7 +61,12 @@ export default function AudioWaveform({ audioUrl, onRegionSave }: AudioWaveformP
       setIsReady(true)
       setError(null)
     })
-    ws.on('finish', () => setIsPlaying(false))
+    ws.on('finish', () => {
+      setIsPlaying(false)
+      if (isLooping) {
+        ws.play()
+      }
+    })
     ws.on('error', (err) => {
       console.error('WaveSurfer error:', err)
       setError('音频加载失败: ' + String(err))
@@ -83,7 +90,7 @@ export default function AudioWaveform({ audioUrl, onRegionSave }: AudioWaveformP
       wsRef.current = null
       regionsRef.current = null
     }
-  }, [audioUrl, showSpectrogram])
+  }, [audioUrl, showSpectrogram, isLooping])
 
   const togglePlay = useCallback(() => {
     wsRef.current?.playPause()
@@ -109,6 +116,22 @@ export default function AudioWaveform({ audioUrl, onRegionSave }: AudioWaveformP
     setShowSpectrogram(prev => !prev)
   }, [])
 
+  const skip = useCallback((seconds: number) => {
+    if (!wsRef.current) return
+    const current = wsRef.current.getCurrentTime()
+    const dur = wsRef.current.getDuration()
+    wsRef.current.seekTo((current + seconds) / dur)
+  }, [])
+
+  const handlePlaybackRateChange = useCallback((rate: number) => {
+    setPlaybackRate(rate)
+    wsRef.current?.setPlaybackRate(rate)
+  }, [])
+
+  const toggleLoop = useCallback(() => {
+    setIsLooping(prev => !prev)
+  }, [])
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
@@ -124,6 +147,45 @@ export default function AudioWaveform({ audioUrl, onRegionSave }: AudioWaveformP
           <span className="mx-2">/</span>
           <span className="font-mono">{formatTime(duration)}</span>
         </div>
+        <button
+          onClick={() => skip(-10)}
+          disabled={!isReady}
+          className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
+          title="快退10秒"
+        >
+          -10s
+        </button>
+        <button
+          onClick={() => skip(10)}
+          disabled={!isReady}
+          className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
+          title="快进10秒"
+        >
+          +10s
+        </button>
+        <select
+          value={playbackRate}
+          onChange={(e) => handlePlaybackRateChange(Number(e.target.value))}
+          disabled={!isReady}
+          className="px-2 py-1 border rounded disabled:bg-gray-100"
+          aria-label="播放速度"
+        >
+          <option value={0.5}>0.5x</option>
+          <option value={0.75}>0.75x</option>
+          <option value={1}>1x</option>
+          <option value={1.25}>1.25x</option>
+          <option value={1.5}>1.5x</option>
+          <option value={2}>2x</option>
+        </select>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={isLooping}
+            onChange={toggleLoop}
+            className="rounded"
+          />
+          循环播放
+        </label>
         <button
           onClick={toggleSpectrogram}
           className={`px-3 py-1 rounded ${showSpectrogram ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100'}`}

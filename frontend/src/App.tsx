@@ -1,5 +1,5 @@
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
-import { Home, Settings as SettingsIcon, BarChart3, User, Menu, X, LogOut, Download, FolderOpen } from 'lucide-react'
+import { Home, Settings as SettingsIcon, BarChart3, User, Menu, X, LogOut, Download, FolderOpen, Upload } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Toast from './components/Toast'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -11,6 +11,7 @@ import ReviewQueue from './pages/ReviewQueue'
 import Export from './pages/Export'
 import Projects from './pages/Projects'
 import Dashboard from './pages/Dashboard'
+import Import from './pages/Import'
 
 // 导航栏组件
 interface NavBarProps {
@@ -28,6 +29,7 @@ function NavBar({ user, onLogout }: NavBarProps) {
     { path: '/review', label: '审核队列', icon: User },
     { path: '/dashboard', label: '统计分析', icon: BarChart3 },
     { path: '/export', label: '数据导出', icon: Download },
+    { path: '/import', label: '批量导入', icon: Upload },
     { path: '/settings', label: '设置', icon: SettingsIcon },
   ]
 
@@ -141,6 +143,7 @@ function NavBar({ user, onLogout }: NavBarProps) {
 function App() {
   const [user, setUser] = useState<{ username: string; full_name?: string } | null>(null)
   const navigate = useNavigate()
+  const location = useLocation()
 
   useEffect(() => {
     // 检查登录状态
@@ -148,7 +151,7 @@ function App() {
     if (userStr) {
       setUser(JSON.parse(userStr))
     }
-  }, [])
+  }, [location.pathname])
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -169,6 +172,7 @@ function App() {
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/review" element={<ProtectedRoute><ReviewQueue /></ProtectedRoute>} />
           <Route path="/export" element={<ProtectedRoute><Export /></ProtectedRoute>} />
+          <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
           <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         </Routes>
