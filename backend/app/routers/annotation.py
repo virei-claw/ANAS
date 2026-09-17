@@ -7,10 +7,12 @@ from typing import Optional, List
 
 from app.database import get_db
 from app.models.annotation import Annotation
+from app.models.annotation_template import AnnotationTemplate
 from app.models.dict import PartName, NoiseType, RoadType
 from app.models.user import User
 from app.models.audio import AudioFile
 from app.schemas.annotation import AnnotationCreate, AnnotationUpdate, AnnotationResponse
+from app.schemas.template import TemplateCreate, TemplateResponse
 from app.routers.auth import get_current_user
 
 router = APIRouter(prefix="/annotations", tags=["annotations"])
@@ -295,3 +297,42 @@ def import_annotations(
         "failed": failed,
         "errors": errors
     }
+
+
+@router.post("/templates", response_model=TemplateResponse)
+def create_template(
+    data: TemplateCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    template = AnnotationTemplate(**data.model_dump(), user_id=current_user.id)
+    db.add(template)
+    db.commit()
+    db.refresh(template)
+    return template
+
+
+@router.get("/templates", response_model=List[TemplateResponse])
+def list_templates(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    templates = db.query(AnnotationTemplate).filter(AnnotationTemplate.user_id == current_user.id).all()
+    return templates
+
+
+@router.delete("/templates/{template_id}")
+def delete_template(
+    template_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    template = db.query(AnnotationTemplate).filter(
+        AnnotationTemplate.id == template_id,
+        AnnotationTemplate.user_id == current_user.id
+    ).first()
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    db.delete(template)
+    db.commit()
+    return {"message": "Deleted"}

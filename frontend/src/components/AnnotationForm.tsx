@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { annotationApi, dictApi, audioApi, DictItem } from '@/lib/api'
+import { useAnnotationTemplate, AnnotationTemplate } from '@/hooks/useAnnotationTemplate'
 
 interface AnnotationFormProps {
   audioId: string
@@ -19,6 +20,10 @@ export default function AnnotationForm({ audioId, startTime, endTime, onSuccess,
   const [showAddPart, setShowAddPart] = useState(false)
   const [showAddNoise, setShowAddNoise] = useState(false)
   const [showAddRoad, setShowAddRoad] = useState(false)
+
+  const { templates, create: createTemplate } = useAnnotationTemplate()
+  const [templateName, setTemplateName] = useState('')
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false)
 
   const [form, setForm] = useState({
     part_name_id: '',
@@ -44,6 +49,40 @@ export default function AnnotationForm({ audioId, startTime, endTime, onSuccess,
     setPartNames(parts.data)
     setNoiseTypes(noises.data)
     setRoadTypes(roads.data)
+  }
+
+  const applyTemplate = (template: AnnotationTemplate) => {
+    // Find IDs from dict items by name match
+    const partItem = partNames.find(p => p.name === template.part_name)
+    const noiseItem = noiseTypes.find(n => n.name === template.noise_type)
+    const roadItem = roadTypes.find(r => r.name === template.road_type)
+    setForm({
+      ...form,
+      part_name_id: partItem?.id || '',
+      noise_type_id: noiseItem?.id || '',
+      road_type_id: roadItem?.id || '',
+      speed: template.speed != null ? String(template.speed) : '',
+      temperature: template.temperature != null ? String(template.temperature) : '',
+      test_mode: template.test_mode || 'dynamic',
+    })
+  }
+
+  const handleSaveTemplate = async () => {
+    if (!templateName.trim()) return
+    const partItem = partNames.find(p => p.id === form.part_name_id)
+    const noiseItem = noiseTypes.find(n => n.id === form.noise_type_id)
+    const roadItem = roadTypes.find(r => r.id === form.road_type_id)
+    await createTemplate({
+      name: templateName,
+      part_name: partItem?.name || null,
+      noise_type: noiseItem?.name || null,
+      road_type: roadItem?.name || null,
+      speed: form.speed ? Number(form.speed) : null,
+      temperature: form.temperature ? Number(form.temperature) : null,
+      test_mode: form.test_mode,
+    })
+    setTemplateName('')
+    setShowSaveTemplate(false)
   }
 
   const handleAddPart = async () => {
@@ -96,7 +135,40 @@ export default function AnnotationForm({ audioId, startTime, endTime, onSuccess,
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-white rounded-lg shadow">
-      <h3 className="text-lg font-semibold">新建标注</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">新建标注</h3>
+        <div className="flex gap-2 items-center">
+          {templates.length > 0 && (
+            <select
+              onChange={(e) => {
+                const t = templates.find(tpl => tpl.id === e.target.value)
+                if (t) applyTemplate(t)
+              }}
+              className="border rounded px-2 py-1 text-sm"
+              defaultValue=""
+            >
+              <option value="" disabled>应用模板...</option>
+              {templates.map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          )}
+          {showSaveTemplate ? (
+            <div className="flex gap-1">
+              <input
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                className="border rounded px-2 py-1 text-sm w-28"
+                placeholder="模板名称"
+              />
+              <button type="button" onClick={handleSaveTemplate} className="px-2 py-1 bg-green-500 text-white rounded text-sm">保存</button>
+              <button type="button" onClick={() => setShowSaveTemplate(false)} className="px-2 py-1 bg-gray-200 rounded text-sm">取消</button>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setShowSaveTemplate(true)} className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-sm">保存为模板</button>
+          )}
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
         {/* 零部件名称 */}
