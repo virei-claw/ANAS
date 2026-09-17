@@ -6,6 +6,7 @@ import AnnotationForm from '@/components/AnnotationForm'
 import { formatTime } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import { X, Edit2, Save, Clock } from 'lucide-react'
+import { useAutoDraft } from '@/hooks/useAutoDraft'
 
 // 标注详情 Modal 组件
 interface AnnotationDetailModalProps {
@@ -359,6 +360,9 @@ export default function AudioDetail() {
   const [selectedRegion, setSelectedRegion] = useState<{ start: number; end: number } | null>(null)
   const [selectedAnnotation, setSelectedAnnotation] = useState<Annotation | null>(null)
 
+  // 自动草稿保存
+  const { restoreDraft, clearDraft } = useAutoDraft(id || '', selectedRegion)
+
   const loadData = useCallback(async () => {
     if (!id) return
     const [audioRes, annotationRes] = await Promise.all([
@@ -373,16 +377,27 @@ export default function AudioDetail() {
     loadData()
   }, [loadData])
 
+  // 页面加载时检查草稿
+  useEffect(() => {
+    const draft = restoreDraft()
+    if (draft) {
+      toast.success('检测到未保存的草稿，是否恢复？', {
+        duration: 5000,
+      })
+    }
+  }, [id])
+
   const handleRegionSave = useCallback((start: number, end: number) => {
     setSelectedRegion({ start, end })
     setShowForm(true)
   }, [])
 
   const handleFormSuccess = useCallback(() => {
+    clearDraft()
     setShowForm(false)
     setSelectedRegion(null)
     loadData()
-  }, [loadData])
+  }, [loadData, clearDraft])
 
   const handleAnnotationSave = useCallback(async (annotationId: string, data: Partial<Annotation>) => {
     await annotationApi.update(annotationId, data)
