@@ -3,6 +3,8 @@ import WaveSurfer from 'wavesurfer.js'
 import RegionsPlugin from 'wavesurfer.js/plugins/regions'
 import SpectrogramPlugin from 'wavesurfer.js/dist/plugins/spectrogram.js'
 import { formatTime } from '@/lib/utils'
+import { useHotkeys } from '@/hooks/useHotkeys'
+import HotkeyHelp from './HotkeyHelp'
 
 interface AudioWaveformProps {
   audioUrl: string
@@ -132,6 +134,16 @@ export default function AudioWaveform({ audioUrl, onRegionSave }: AudioWaveformP
     setIsLooping(prev => !prev)
   }, [])
 
+  // 快捷键支持
+  useHotkeys({
+    ' ': togglePlay,
+    j: () => skip(-10),
+    k: togglePlay,
+    l: () => skip(10),
+    '[': () => skip(-5),
+    ']': () => skip(5),
+  })
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
@@ -195,6 +207,8 @@ export default function AudioWaveform({ audioUrl, onRegionSave }: AudioWaveformP
         {!isReady && !error && <span className="text-sm text-gray-500">加载中...</span>}
         {error && <span className="text-sm text-red-500">{error}</span>}
       </div>
+
+      <HotkeyHelp />
 
       <div ref={containerRef} className="w-full bg-gray-100 rounded" style={{ minHeight: '128px' }} />
 
