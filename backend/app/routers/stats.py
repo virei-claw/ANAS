@@ -134,3 +134,34 @@ def get_my_workload(
     ).count()
 
     return {"pending": pending, "reviewing": reviewing, "completed": completed}
+
+
+@router.get("/my-summary")
+def get_my_summary(
+    period: str = "week",  # day, week, month
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """获取当前用户的个人统计报表，支持按日/周/月统计"""
+    # 计算日期范围
+    if period == "day":
+        start_date = datetime.utcnow().replace(hour=0, minute=0, second=0)
+    elif period == "week":
+        start_date = datetime.utcnow() - timedelta(days=7)
+    else:  # month
+        start_date = datetime.utcnow() - timedelta(days=30)
+
+    annotations = db.query(Annotation).filter(
+        Annotation.annotator_id == current_user.id,
+        Annotation.created_at >= start_date
+    ).all()
+
+    return {
+        "total_count": len(annotations),
+        "by_status": {
+            "draft": sum(1 for a in annotations if a.status == 'draft'),
+            "submitted": sum(1 for a in annotations if a.status == 'submitted'),
+            "approved": sum(1 for a in annotations if a.status == 'approved'),
+            "rejected": sum(1 for a in annotations if a.status == 'rejected'),
+        }
+    }

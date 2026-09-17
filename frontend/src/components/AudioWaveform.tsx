@@ -5,13 +5,21 @@ import SpectrogramPlugin from 'wavesurfer.js/dist/plugins/spectrogram.js'
 import { formatTime } from '@/lib/utils'
 import { useHotkeys } from '@/hooks/useHotkeys'
 import HotkeyHelp from './HotkeyHelp'
+import api from '@/lib/api'
 
 interface AudioWaveformProps {
   audioUrl: string
+  audioId?: string
   onRegionSave?: (start: number, end: number) => void
 }
 
-export default function AudioWaveform({ audioUrl, onRegionSave }: AudioWaveformProps) {
+interface AnomalySegment {
+  start: number
+  end: number
+  confidence: number
+}
+
+export default function AudioWaveform({ audioUrl, audioId, onRegionSave }: AudioWaveformProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const wsRef = useRef<WaveSurfer | null>(null)
   const regionsRef = useRef<RegionsPlugin | null>(null)
@@ -24,6 +32,9 @@ export default function AudioWaveform({ audioUrl, onRegionSave }: AudioWaveformP
   const [showSpectrogram, setShowSpectrogram] = useState(false)
   const [playbackRate, setPlaybackRate] = useState(1)
   const [isLooping, setIsLooping] = useState(false)
+  const [isDetecting, setIsDetecting] = useState(false)
+  const [detectedSegments, setDetectedSegments] = useState<AnomalySegment[]>([])
+  const [showDetection, setShowDetection] = useState(false)
 
   useEffect(() => {
     if (!containerRef.current || !audioUrl) return
@@ -134,6 +145,22 @@ export default function AudioWaveform({ audioUrl, onRegionSave }: AudioWaveformP
     setIsLooping(prev => !prev)
   }, [])
 
+  const handleDetect = useCallback(async () => {
+    if (!audioId || isDetecting) return
+    setIsDetecting(true)
+    setShowDetection(false)
+    setDetectedSegments([])
+    try {
+      const res = await api.get(`/audio/${audioId}/detect-anomalies`)
+      setDetectedSegments(res.data.segments || [])
+      setShowDetection(true)
+    } catch (err) {
+      console.error('AI检测失败:', err)
+    } finally {
+      setIsDetecting(false)
+    }
+  }, [audioId, isDetecting])
+
   // 快捷键支持
   useHotkeys({
     ' ': togglePlay,
@@ -204,13 +231,40 @@ export default function AudioWaveform({ audioUrl, onRegionSave }: AudioWaveformP
         >
           Mel谱
         </button>
+        {audioId && (
+          <button
+            onClick={handleDetect}
+            disabled={!isReady || isDetecting}
+            className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {isDetecting ? '检测中...' : 'AI检测'}
+          </button>
+        )}
         {!isReady && !error && <span className="text-sm text-gray-500">加载中...</span>}
         {error && <span className="text-sm text-red-500">{error}</span>}
+        {showDetection && (
+          <span className="text-sm text-red-600">
+            发现 {detectedSegments.length} 个异常区间
+          </span>
+        )}
       </div>
 
       <HotkeyHelp />
 
       <div ref={containerRef} className="w-full bg-gray-100 rounded" style={{ minHeight: '128px' }} />
+
+      {showDetection && detectedSegments.length > 0 && (
+        <div className="mt-2 p-3 bg-red-50 rounded-lg">
+          <div className="text-sm font-medium text-red-700 mb-2">AI检测结果:</div>
+          <div className="space-y-1">
+            {detectedSegments.map((seg, i) => (
+              <div key={i} className="text-sm text-red-600">
+                {formatTime(seg.start)} - {formatTime(seg.end)} (置信度: {(seg.confidence * 100).toFixed(0)}%)
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {region && (
         <div className="flex items-center gap-4 p-3 bg-indigo-50 rounded-lg">

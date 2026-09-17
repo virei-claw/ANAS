@@ -11,6 +11,7 @@ from app.models.audio import AudioFile
 from app.models.user import User
 from app.schemas.audio import AudioFileResponse, AudioFileList
 from app.routers.auth import get_current_user
+from app.services.anomaly_detector import AnomalyDetector
 
 router = APIRouter(prefix="/audio", tags=["audio"])
 
@@ -205,3 +206,22 @@ async def stream_clip(clip_filepath: str):
     from fastapi.responses import FileResponse
     filename = os.path.basename(clip_filepath)
     return FileResponse(clip_filepath, media_type="audio/wav", filename=filename)
+
+@router.get("/{audio_id}/detect-anomalies")
+def detect_anomalies(
+    audio_id: uuid.UUID,
+    threshold: float = 0.5,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """AI预检测：检测音频中的异常区间"""
+    audio = db.query(AudioFile).filter(AudioFile.id == audio_id).first()
+    if not audio:
+        raise HTTPException(status_code=404, detail="Audio not found")
+
+    if not os.path.exists(audio.filepath):
+        raise HTTPException(status_code=404, detail="Audio file not found")
+
+    detector = AnomalyDetector(threshold=threshold)
+    segments = detector.detect(audio.filepath)
+    return {"segments": segments}

@@ -110,3 +110,58 @@ async def test_my_workload_with_auth():
         assert isinstance(data["pending"], int)
         assert isinstance(data["reviewing"], int)
         assert isinstance(data["completed"], int)
+
+
+@pytest.mark.asyncio
+async def test_my_summary_requires_auth():
+    """Test my-summary endpoint requires auth."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/stats/my-summary")
+        assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_my_summary_with_auth():
+    """Test my-summary endpoint returns personal annotation summary with period filter."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        token = await get_auth_token(client, "summaryuser")
+        # Test default period (week)
+        response = await client.get("/api/stats/my-summary",
+            headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 200
+        data = response.json()
+        # Verify response structure
+        assert "total_count" in data
+        assert "by_status" in data
+        # Verify by_status has expected keys
+        assert "draft" in data["by_status"]
+        assert "submitted" in data["by_status"]
+        assert "approved" in data["by_status"]
+        assert "rejected" in data["by_status"]
+
+
+@pytest.mark.asyncio
+async def test_my_summary_period_filter():
+    """Test my-summary endpoint supports day/week/month period filter."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        token = await get_auth_token(client, "summaryuser2")
+        # Test day period
+        response = await client.get("/api/stats/my-summary?period=day",
+            headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 200
+        data = response.json()
+        assert "total_count" in data
+        assert "by_status" in data
+
+        # Test week period
+        response = await client.get("/api/stats/my-summary?period=week",
+            headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 200
+
+        # Test month period
+        response = await client.get("/api/stats/my-summary?period=month",
+            headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 200

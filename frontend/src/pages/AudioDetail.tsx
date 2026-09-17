@@ -426,6 +426,7 @@ export default function AudioDetail() {
         <h2 className="text-lg font-semibold mb-4">波形 & 频谱</h2>
         <AudioWaveform
           audioUrl={`/api/audio/${id}/stream`}
+          audioId={id}
           onRegionSave={handleRegionSave}
         />
       </div>

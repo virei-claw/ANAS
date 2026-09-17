@@ -32,15 +32,31 @@ interface MyWorkload {
   completed: number
 }
 
+interface MySummary {
+  total_count: number
+  by_status: {
+    draft: number
+    submitted: number
+    approved: number
+    rejected: number
+  }
+}
+
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [userWorkload, setUserWorkload] = useState<UserWorkload[]>([])
   const [myWorkload, setMyWorkload] = useState<MyWorkload>({ pending: 0, reviewing: 0, completed: 0 })
+  const [mySummary, setMySummary] = useState<MySummary>({ total_count: 0, by_status: { draft: 0, submitted: 0, approved: 0, rejected: 0 } })
+  const [summaryPeriod, setSummaryPeriod] = useState('week')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadStats()
   }, [])
+
+  useEffect(() => {
+    api.get(`/stats/my-summary?period=${summaryPeriod}`).then(res => setMySummary(res.data))
+  }, [summaryPeriod])
 
   const loadStats = async () => {
     setLoading(true)
@@ -107,6 +123,34 @@ export default function Dashboard() {
             <div className="text-sm">{title}</div>
           </div>
         ))}
+      </div>
+
+      {/* 个人统计报表 */}
+      <div className="mt-6">
+        <h2 className="text-xl font-semibold mb-4">个人统计</h2>
+        <div className="flex gap-2 mb-4">
+          <button onClick={() => setSummaryPeriod('day')} className={`px-3 py-1 rounded ${summaryPeriod === 'day' ? 'bg-indigo-600 text-white' : 'bg-gray-100'}`}>今日</button>
+          <button onClick={() => setSummaryPeriod('week')} className={`px-3 py-1 rounded ${summaryPeriod === 'week' ? 'bg-indigo-600 text-white' : 'bg-gray-100'}`}>本周</button>
+          <button onClick={() => setSummaryPeriod('month')} className={`px-3 py-1 rounded ${summaryPeriod === 'month' ? 'bg-indigo-600 text-white' : 'bg-gray-100'}`}>本月</button>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <div className="text-3xl font-bold mb-4">{mySummary.total_count}</div>
+          <div className="space-y-2">
+            {Object.entries(mySummary.by_status).map(([status, count]) => {
+              const total = Object.values(mySummary.by_status).reduce((a, b) => a + b, 0)
+              const percentage = total > 0 ? (count / total) * 100 : 0
+              return (
+                <div key={status} className="flex items-center gap-2">
+                  <div className="w-20 text-sm capitalize">{status}</div>
+                  <div className="flex-1 bg-gray-200 rounded-full h-2">
+                    <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${percentage}%` }} />
+                  </div>
+                  <div className="w-8 text-sm text-right">{count}</div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
       </div>
 
       {/* 统计卡片 */}
