@@ -84,7 +84,7 @@ describe('AudioWaveform 播放控制增强功能', () => {
       await act(async () => {
         render(<AudioWaveform audioUrl={mockAudioUrl} />)
       })
-      expect(screen.getByRole('checkbox', { name: /循环播放/i })).toBeInTheDocument()
+      expect(screen.getByRole('checkbox', { name: /循环/i })).toBeInTheDocument()
     })
 
     it('应显示 Mel谱 按钮', async () => {
@@ -119,7 +119,7 @@ describe('AudioWaveform 播放控制增强功能', () => {
       await act(async () => {
         render(<AudioWaveform audioUrl={mockAudioUrl} />)
       })
-      const checkbox = screen.getByRole('checkbox', { name: /循环播放/i })
+      const checkbox = screen.getByRole('checkbox', { name: /循环/i })
       expect(checkbox).not.toBeChecked()
     })
 
@@ -127,7 +127,7 @@ describe('AudioWaveform 播放控制增强功能', () => {
       await act(async () => {
         render(<AudioWaveform audioUrl={mockAudioUrl} />)
       })
-      const checkbox = screen.getByRole('checkbox', { name: /循环播放/i })
+      const checkbox = screen.getByRole('checkbox', { name: /循环/i })
       await act(async () => {
         fireEvent.click(checkbox)
       })
@@ -138,7 +138,7 @@ describe('AudioWaveform 播放控制增强功能', () => {
       await act(async () => {
         render(<AudioWaveform audioUrl={mockAudioUrl} />)
       })
-      const checkbox = screen.getByRole('checkbox', { name: /循环播放/i })
+      const checkbox = screen.getByRole('checkbox', { name: /循环/i })
       await act(async () => {
         fireEvent.click(checkbox)
         fireEvent.click(checkbox)
