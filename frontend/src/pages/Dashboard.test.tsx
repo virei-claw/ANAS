@@ -1,16 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import Dashboard from '../pages/Dashboard'
+import Dashboard from './Dashboard'
 import api from '@/lib/api'
 
 vi.mock('@/lib/api')
-
-const mockMyWorkload = {
-  pending: 5,
-  reviewing: 3,
-  completed: 12
-}
 
 const mockStats = {
   total_audios: 10,
@@ -25,13 +19,10 @@ const mockStats = {
 
 const mockUserWorkload: any[] = []
 
-describe('Dashboard my-workload', () => {
+describe('Dashboard', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ;(api.get as any).mockImplementation((url: string) => {
-      if (url === '/stats/my-workload') {
-        return Promise.resolve({ data: mockMyWorkload })
-      }
+    vi.mocked(api.get).mockImplementation((url: string) => {
       if (url === '/stats/dashboard') {
         return Promise.resolve({ data: mockStats })
       }
@@ -42,7 +33,7 @@ describe('Dashboard my-workload', () => {
     })
   })
 
-  it('should call /stats/my-workload API', async () => {
+  it('should display page header', async () => {
     render(
       <MemoryRouter>
         <Dashboard />
@@ -50,11 +41,11 @@ describe('Dashboard my-workload', () => {
     )
 
     await waitFor(() => {
-      expect(api.get).toHaveBeenCalledWith('/stats/my-workload')
+      expect(screen.getByText('统计分析')).toBeInTheDocument()
     })
   })
 
-  it('should display pending/reviewing/completed counts', async () => {
+  it('should call dashboard APIs', async () => {
     render(
       <MemoryRouter>
         <Dashboard />
@@ -62,18 +53,12 @@ describe('Dashboard my-workload', () => {
     )
 
     await waitFor(() => {
-      // Check 个人工作台 section has correct values
-      const pendingCard = screen.getByText('待标注').parentElement
-      const reviewingCard = screen.getByText('审核中').parentElement
-      const completedCard = screen.getByText('已完成').parentElement
-
-      expect(pendingCard?.textContent).toContain('5')
-      expect(reviewingCard?.textContent).toContain('3')
-      expect(completedCard?.textContent).toContain('12')
+      expect(api.get).toHaveBeenCalledWith('/stats/dashboard')
+      expect(api.get).toHaveBeenCalledWith('/stats/user-workload')
     })
   })
 
-  it('should display workload card labels', async () => {
+  it('should display stat cards', async () => {
     render(
       <MemoryRouter>
         <Dashboard />
@@ -81,9 +66,31 @@ describe('Dashboard my-workload', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('待标注')).toBeInTheDocument()
-      expect(screen.getByText('审核中')).toBeInTheDocument()
-      expect(screen.getByText('已完成')).toBeInTheDocument()
+      expect(screen.getByText('总音频数')).toBeInTheDocument()
+    })
+  })
+
+  it('should display status distribution section', async () => {
+    render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('标注状态分布')).toBeInTheDocument()
+    })
+  })
+
+  it('should display user workload ranking section', async () => {
+    render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('用户工作量排行')).toBeInTheDocument()
     })
   })
 })

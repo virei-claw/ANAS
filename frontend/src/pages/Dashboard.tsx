@@ -26,49 +26,24 @@ interface UserWorkload {
   count: number
 }
 
-interface MyWorkload {
-  pending: number
-  reviewing: number
-  completed: number
-}
-
-interface MySummary {
-  total_count: number
-  by_status: {
-    draft: number
-    submitted: number
-    approved: number
-    rejected: number
-  }
-}
-
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [userWorkload, setUserWorkload] = useState<UserWorkload[]>([])
-  const [myWorkload, setMyWorkload] = useState<MyWorkload>({ pending: 0, reviewing: 0, completed: 0 })
-  const [mySummary, setMySummary] = useState<MySummary>({ total_count: 0, by_status: { draft: 0, submitted: 0, approved: 0, rejected: 0 } })
-  const [summaryPeriod, setSummaryPeriod] = useState('week')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadStats()
   }, [])
 
-  useEffect(() => {
-    api.get(`/stats/my-summary?period=${summaryPeriod}`).then(res => setMySummary(res.data))
-  }, [summaryPeriod])
-
   const loadStats = async () => {
     setLoading(true)
     try {
-      const [statsResp, workloadResp, myWorkloadResp] = await Promise.all([
+      const [statsResp, workloadResp] = await Promise.all([
         api.get('/stats/dashboard'),
-        api.get('/stats/user-workload'),
-        api.get('/stats/my-workload')
+        api.get('/stats/user-workload')
       ])
       setStats(statsResp.data)
       setUserWorkload(workloadResp.data)
-      setMyWorkload(myWorkloadResp.data)
     } catch {
       toast.error('加载失败')
     } finally {
@@ -78,12 +53,12 @@ export default function Dashboard() {
 
   if (loading || !stats) {
     return (
-      <div className="p-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid grid-cols-4 gap-4">
+      <div style={{ padding: '32px', maxWidth: '1280px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ height: '32px', background: '#E5E7EB', borderRadius: '8px', width: '200px' }}></div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-24 bg-gray-200 rounded"></div>
+              <div key={i} style={{ height: '120px', background: '#E5E7EB', borderRadius: '16px' }}></div>
             ))}
           </div>
         </div>
@@ -92,106 +67,135 @@ export default function Dashboard() {
   }
 
   const statCards = [
-    { label: '总音频数', value: stats.total_audios, icon: AudioLines, color: 'bg-blue-500' },
-    { label: '总标注数', value: stats.total_annotations, icon: FileText, color: 'bg-green-500' },
-    { label: '今日标注', value: stats.today_annotations, icon: TrendingUp, color: 'bg-purple-500' },
-    { label: '待审核', value: stats.status_counts.submitted, icon: Clock, color: 'bg-orange-500' },
+    { label: '总音频数', value: stats.total_audios, icon: AudioLines, gradient: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)' },
+    { label: '总标注数', value: stats.total_annotations, icon: FileText, gradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' },
+    { label: '今日标注', value: stats.today_annotations, icon: TrendingUp, gradient: 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)' },
+    { label: '待审核', value: stats.status_counts.submitted, icon: Clock, gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' },
   ]
 
-  const workloadColors = {
-    yellow: 'bg-yellow-50 border-yellow-200 text-yellow-800',
-    blue: 'bg-blue-50 border-blue-200 text-blue-800',
-    green: 'bg-green-50 border-green-200 text-green-800'
+  const statusLabels: Record<string, { label: string; color: string }> = {
+    draft: { label: '草稿', color: '#6B7280' },
+    submitted: { label: '审核中', color: '#F59E0B' },
+    approved: { label: '已通过', color: '#10B981' },
+    rejected: { label: '已拒绝', color: '#EF4444' },
   }
 
-  const workloadCards = [
-    { title: '待标注', count: myWorkload.pending, color: 'yellow' as const },
-    { title: '审核中', count: myWorkload.reviewing, color: 'blue' as const },
-    { title: '已完成', count: myWorkload.completed, color: 'green' as const },
-  ]
-
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">统计分析</h1>
+    <div style={{ padding: '32px', maxWidth: '1280px', margin: '0 auto', animation: 'fadeIn 0.5s ease-out' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '32px' }}>
+        <h1 style={{
+          fontSize: '28px',
+          fontWeight: 700,
+          color: '#111827',
+          fontFamily: 'var(--font-display)',
+          letterSpacing: '-0.02em',
+          margin: 0
+        }}>统计分析</h1>
+        <p style={{ fontSize: '14px', color: '#6B7280', marginTop: '4px' }}>查看整体标注数据统计概况</p>
+      </div>
 
-      {/* 个人工作台 */}
-      <h2 className="text-xl font-semibold mb-4">个人工作台</h2>
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        {workloadCards.map(({ title, count, color }) => (
-          <div key={title} className={`p-4 rounded-lg border ${workloadColors[color]}`}>
-            <div className="text-2xl font-bold">{count}</div>
-            <div className="text-sm">{title}</div>
+      {/* Stat Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
+        {statCards.map(({ label, value, icon: Icon, gradient }) => (
+          <div
+            key={label}
+            style={{
+              background: gradient,
+              borderRadius: '16px',
+              padding: '20px',
+              color: 'white',
+              position: 'relative',
+              overflow: 'hidden',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+          >
+            <div style={{
+              position: 'absolute',
+              top: '-30px',
+              right: '-30px',
+              width: '100px',
+              height: '100px',
+              background: 'rgba(255,255,255,0.15)',
+              borderRadius: '50%'
+            }} />
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative' }}>
+              <div>
+                <div style={{ fontSize: '32px', fontWeight: 700, fontFamily: 'var(--font-display)', lineHeight: 1 }}>{value}</div>
+                <div style={{ fontSize: '13px', marginTop: '8px', opacity: 0.9 }}>{label}</div>
+              </div>
+              <div style={{
+                width: '44px',
+                height: '44px',
+                background: 'rgba(255,255,255,0.2)',
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Icon size={22} />
+              </div>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* 个人统计报表 */}
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold mb-4">个人统计</h2>
-        <div className="flex gap-2 mb-4">
-          <button onClick={() => setSummaryPeriod('day')} className={`px-3 py-1 rounded ${summaryPeriod === 'day' ? 'bg-indigo-600 text-white' : 'bg-gray-100'}`}>今日</button>
-          <button onClick={() => setSummaryPeriod('week')} className={`px-3 py-1 rounded ${summaryPeriod === 'week' ? 'bg-indigo-600 text-white' : 'bg-gray-100'}`}>本周</button>
-          <button onClick={() => setSummaryPeriod('month')} className={`px-3 py-1 rounded ${summaryPeriod === 'month' ? 'bg-indigo-600 text-white' : 'bg-gray-100'}`}>本月</button>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="text-3xl font-bold mb-4">{mySummary.total_count}</div>
-          <div className="space-y-2">
-            {Object.entries(mySummary.by_status).map(([status, count]) => {
-              const total = Object.values(mySummary.by_status).reduce((a, b) => a + b, 0)
-              const percentage = total > 0 ? (count / total) * 100 : 0
+      {/* Two Column Layout */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+        {/* Status Distribution */}
+        <div style={{
+          background: 'white',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)',
+          border: '1px solid #F3F4F6'
+        }}>
+          <h3 style={{
+            fontSize: '15px',
+            fontWeight: 600,
+            color: '#374151',
+            fontFamily: 'var(--font-display)',
+            margin: '0 0 20px 0'
+          }}>标注状态分布</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {Object.entries(stats.status_counts).map(([status, count]) => {
+              const { label, color } = statusLabels[status] || { label: status, color: '#6B7280' }
               return (
-                <div key={status} className="flex items-center gap-2">
-                  <div className="w-20 text-sm capitalize">{status}</div>
-                  <div className="flex-1 bg-gray-200 rounded-full h-2">
-                    <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${percentage}%` }} />
+                <div key={status} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: color }} />
+                    <span style={{ fontSize: '14px', color: '#374151' }}>{label}</span>
                   </div>
-                  <div className="w-8 text-sm text-right">{count}</div>
+                  <span style={{ fontSize: '15px', fontWeight: 600, color: '#111827' }}>{count}</span>
                 </div>
               )
             })}
           </div>
         </div>
-      </div>
 
-      {/* 统计卡片 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        {statCards.map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-white rounded-xl shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-gray-500 text-sm">{label}</span>
-              <div className={`${color} p-3 rounded-lg`}>
-                <Icon className="text-white" size={24} />
-              </div>
-            </div>
-            <div className="text-3xl font-bold text-gray-900">{value}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* 标注状态分布 */}
-      <div className="grid md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-xl shadow p-6">
-          <h3 className="font-semibold mb-4">标注状态分布</h3>
-          <div className="space-y-3">
-            {Object.entries(stats.status_counts).map(([status, count]) => (
-              <div key={status} className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 capitalize">{status}</span>
-                <span className="font-medium">{count}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow p-6">
-          <h3 className="font-semibold mb-4">异响类型分布</h3>
+        {/* Noise Type Distribution */}
+        <div style={{
+          background: 'white',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)',
+          border: '1px solid #F3F4F6'
+        }}>
+          <h3 style={{
+            fontSize: '15px',
+            fontWeight: 600,
+            color: '#374151',
+            fontFamily: 'var(--font-display)',
+            margin: '0 0 20px 0'
+          }}>异响类型分布</h3>
           {stats.noise_type_stats.length === 0 ? (
-            <p className="text-gray-500 text-sm">暂无数据</p>
+            <p style={{ fontSize: '14px', color: '#9CA3AF', textAlign: 'center', padding: '20px 0' }}>暂无数据</p>
           ) : (
-            <div className="space-y-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {stats.noise_type_stats.slice(0, 5).map(({ name, count }) => (
-                <div key={name} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">{name}</span>
-                  <span className="font-medium">{count}</span>
+                <div key={name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '14px', color: '#374151' }}>{name}</span>
+                  <span style={{ fontSize: '15px', fontWeight: 600, color: '#111827' }}>{count}</span>
                 </div>
               ))}
             </div>
@@ -199,57 +203,130 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 零部件问题排行 */}
-      <div className="bg-white rounded-xl shadow p-6">
-        <h3 className="font-semibold mb-4">零部件问题排行 TOP 10</h3>
+      {/* Parts Ranking */}
+      <div style={{
+        background: 'white',
+        borderRadius: '16px',
+        padding: '24px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)',
+        border: '1px solid #F3F4F6',
+        marginBottom: '24px'
+      }}>
+        <h3 style={{
+          fontSize: '15px',
+          fontWeight: 600,
+          color: '#374151',
+          fontFamily: 'var(--font-display)',
+          margin: '0 0 20px 0'
+        }}>零部件问题排行 TOP 10</h3>
         {stats.part_stats.length === 0 ? (
-          <p className="text-gray-500 text-sm">暂无数据</p>
+          <p style={{ fontSize: '14px', color: '#9CA3AF', textAlign: 'center', padding: '20px 0' }}>暂无数据</p>
         ) : (
-          <div className="space-y-2">
-            {stats.part_stats.map(({ name, count }, idx) => (
-              <div key={name} className="flex items-center gap-4">
-                <span className="w-6 text-gray-400 text-sm">{idx + 1}</span>
-                <span className="flex-1 text-sm text-gray-600">{name}</span>
-                <div className="w-32 bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-indigo-600 h-2 rounded-full"
-                    style={{ width: `${Math.min(100, (count / stats.part_stats[0].count) * 100)}%` }}
-                  />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {stats.part_stats.map(({ name, count }, idx) => {
+              const maxCount = stats.part_stats[0]?.count || 1
+              return (
+                <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '6px',
+                    background: idx < 3 ? 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' : '#F3F4F6',
+                    color: idx < 3 ? 'white' : '#6B7280',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '12px',
+                    fontWeight: 600
+                  }}>
+                    {idx + 1}
+                  </div>
+                  <span style={{ flex: 1, fontSize: '14px', color: '#374151' }}>{name}</span>
+                  <div style={{ width: '120px', height: '6px', background: '#F3F4F6', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{
+                      width: `${(count / maxCount) * 100}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #2563EB 0%, #3B82F6 100%)',
+                      borderRadius: '3px'
+                    }} />
+                  </div>
+                  <span style={{ width: '32px', fontSize: '14px', fontWeight: 600, color: '#111827', textAlign: 'right' }}>{count}</span>
                 </div>
-                <span className="font-medium w-8 text-right">{count}</span>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
 
-      {/* 用户工作量排行榜 */}
-      <div className="bg-white rounded-xl shadow p-6">
-        <h3 className="font-semibold mb-4">用户工作量排行</h3>
+      {/* User Workload */}
+      <div style={{
+        background: 'white',
+        borderRadius: '16px',
+        padding: '24px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)',
+        border: '1px solid #F3F4F6'
+      }}>
+        <h3 style={{
+          fontSize: '15px',
+          fontWeight: 600,
+          color: '#374151',
+          fontFamily: 'var(--font-display)',
+          margin: '0 0 20px 0'
+        }}>用户工作量排行</h3>
         {userWorkload.length === 0 ? (
-          <p className="text-gray-500 text-sm">暂无数据</p>
+          <p style={{ fontSize: '14px', color: '#9CA3AF', textAlign: 'center', padding: '20px 0' }}>暂无数据</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr className="border-b">
-                  <th className="text-left py-2 px-3 text-gray-500 font-medium">排名</th>
-                  <th className="text-left py-2 px-3 text-gray-500 font-medium">用户名</th>
-                  <th className="text-left py-2 px-3 text-gray-500 font-medium">姓名</th>
-                  <th className="text-right py-2 px-3 text-gray-500 font-medium">标注数量</th>
+                <tr>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #E5E7EB', background: '#F9FAFB' }}>排名</th>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #E5E7EB', background: '#F9FAFB' }}>用户名</th>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #E5E7EB', background: '#F9FAFB' }}>姓名</th>
+                  <th style={{ textAlign: 'right', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #E5E7EB', background: '#F9FAFB' }}>标注数量</th>
                 </tr>
               </thead>
               <tbody>
-                {userWorkload
-                  .sort((a, b) => b.count - a.count)
-                  .map(({ user_id, username, full_name, count }, idx) => (
-                    <tr key={user_id} className="border-b last:border-0">
-                      <td className="py-2 px-3 text-gray-400">{idx + 1}</td>
-                      <td className="py-2 px-3">{username}</td>
-                      <td className="py-2 px-3">{full_name || '-'}</td>
-                      <td className="py-2 px-3 text-right font-medium">{count}</td>
+                {userWorkload.sort((a, b) => b.count - a.count).map(({ user_id, username, full_name, count }, idx) => {
+                  const isTop3 = idx < 3
+                  return (
+                    <tr key={user_id} style={{ transition: 'background 0.15s ease' }}>
+                      <td style={{ padding: '16px', borderBottom: '1px solid #F3F4F6' }}>
+                        <div style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '8px',
+                          background: isTop3 ? 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' : '#F3F4F6',
+                          color: isTop3 ? 'white' : '#6B7280',
+                          fontWeight: 600,
+                          fontSize: '13px',
+                          boxShadow: isTop3 ? '0 2px 8px rgba(37,99,235,0.3)' : 'none'
+                        }}>
+                          {idx + 1}
+                        </div>
+                      </td>
+                      <td style={{ padding: '16px', borderBottom: '1px solid #F3F4F6', fontSize: '14px', fontWeight: 500, color: '#374151' }}>{username}</td>
+                      <td style={{ padding: '16px', borderBottom: '1px solid #F3F4F6', fontSize: '14px', color: '#6B7280' }}>{full_name || '-'}</td>
+                      <td style={{ padding: '16px', borderBottom: '1px solid #F3F4F6', textAlign: 'right' }}>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          padding: '4px 12px',
+                          background: isTop3 ? 'linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)' : '#F3F4F6',
+                          color: isTop3 ? '#1D4ED8' : '#6B7280',
+                          borderRadius: '9999px',
+                          fontWeight: 600,
+                          fontSize: '14px'
+                        }}>
+                          {count}
+                        </span>
+                      </td>
                     </tr>
-                  ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>

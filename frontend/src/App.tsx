@@ -11,6 +11,7 @@ import ReviewQueue from './pages/ReviewQueue'
 import Export from './pages/Export'
 import Projects from './pages/Projects'
 import Dashboard from './pages/Dashboard'
+import MyCenter from './pages/MyCenter'
 import Import from './pages/Import'
 import { annotationApi } from './lib/api'
 
@@ -30,6 +31,7 @@ function NavBar({ user, onLogout, pendingCount = 0 }: NavBarProps) {
 
   const navItems = [
     { path: '/', label: '音频管理', icon: Home },
+    { path: '/my', label: '我的', icon: User },
     { path: '/projects', label: '项目管理', icon: FolderOpen },
     // 仅管理员显示审核队列
     ...(isAdmin ? [{ path: '/review', label: '审核队列', icon: User, badge: pendingCount }] : []),
@@ -43,33 +45,90 @@ function NavBar({ user, onLogout, pendingCount = 0 }: NavBarProps) {
   const isActive = (path: string) => location.pathname === path
 
   return (
-    <nav className="bg-white shadow-sm sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
+    <nav style={{
+      background: 'rgba(255, 255, 255, 0.92)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      borderBottom: '1px solid var(--color-border)',
+      position: 'sticky',
+      top: 0,
+      zIndex: 50
+    }}>
+      <div className="max-w-7xl mx-auto px-6">
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          height: '64px'
+        }}>
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">AN</span>
+          <Link to="/" style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            textDecoration: 'none'
+          }}>
+            <div style={{
+              width: '36px',
+              height: '36px',
+              background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
+            }}>
+              <span style={{ color: 'white', fontWeight: 700, fontSize: '14px', fontFamily: 'var(--font-display)' }}>AN</span>
             </div>
-            <span className="text-xl font-bold text-gray-900">ANAS</span>
+            <span style={{ fontSize: '18px', fontWeight: 700, color: '#111827', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>ANAS</span>
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} className="hidden md:flex">
             {navItems.map(({ path, label, icon: Icon, badge }) => (
               <Link
                 key={path}
                 to={path}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive(path)
-                    ? 'bg-indigo-50 text-indigo-600'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  transition: 'all var(--transition-fast)',
+                  background: isActive(path) ? 'var(--color-accent-soft)' : 'transparent',
+                  color: isActive(path) ? 'var(--color-accent)' : 'var(--color-text-secondary)'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive(path)) {
+                    e.currentTarget.style.background = 'var(--color-bg-secondary)';
+                    e.currentTarget.style.color = 'var(--color-text-primary)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive(path)) {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = 'var(--color-text-secondary)';
+                  }
+                }}
               >
                 <Icon size={18} />
                 {label}
                 {badge !== undefined && badge > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-xs font-medium bg-red-500 text-white rounded-full">
+                  <span style={{
+                    marginLeft: '6px',
+                    padding: '2px 8px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    background: '#EF4444',
+                    color: 'white',
+                    borderRadius: '9999px',
+                    minWidth: '20px',
+                    textAlign: 'center'
+                  }}>
                     {badge > 99 ? '99+' : badge}
                   </span>
                 )}
@@ -78,33 +137,80 @@ function NavBar({ user, onLogout, pendingCount = 0 }: NavBarProps) {
           </div>
 
           {/* User Menu */}
-          <div className="flex items-center gap-3">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {user ? (
               <>
-                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full">
-                  <div className="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs font-medium">{user.username[0].toUpperCase()}</span>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '6px 14px 6px 6px',
+                  background: 'var(--color-bg-secondary)',
+                  borderRadius: '9999px'
+                }}>
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+                    borderRadius: '9999px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)'
+                  }}>
+                    <span style={{ color: 'white', fontWeight: 600, fontSize: '13px' }}>{user.username[0].toUpperCase()}</span>
                   </div>
-                  <span className="text-sm text-gray-700">{user.full_name || user.username}</span>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)' }}>{user.username}</span>
                 </div>
                 <button
                   onClick={onLogout}
-                  className="p-2 hover:bg-gray-100 rounded-lg text-gray-600"
+                  style={{
+                    padding: '8px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: 'transparent',
+                    color: 'var(--color-text-secondary)',
+                    cursor: 'pointer',
+                    transition: 'all var(--transition-fast)'
+                  }}
                   title="退出登录"
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg-secondary)'; e.currentTarget.style.color = 'var(--color-error)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text-secondary)'; }}
                 >
-                  <LogOut size={20} />
+                  <LogOut size={18} />
                 </button>
               </>
             ) : (
               <Link
                 to="/login"
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium"
+                style={{
+                  padding: '10px 20px',
+                  background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+                  color: 'white',
+                  borderRadius: '10px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
+                  transition: 'all var(--transition-fast)'
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(37, 99, 235, 0.4)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.3)'; }}
               >
                 登录
               </Link>
             )}
             <button
-              className="p-2 hover:bg-gray-100 rounded-lg md:hidden"
+              style={{
+                padding: '8px',
+                borderRadius: '8px',
+                border: 'none',
+                background: 'transparent',
+                color: 'var(--color-text-secondary)',
+                cursor: 'pointer',
+                display: 'none'
+              }}
+              className="md:hidden"
               onClick={() => setMobileOpen(!mobileOpen)}
             >
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
@@ -114,22 +220,38 @@ function NavBar({ user, onLogout, pendingCount = 0 }: NavBarProps) {
 
         {/* Mobile Nav */}
         {mobileOpen && (
-          <div className="md:hidden pb-4">
+          <div style={{ paddingBottom: '16px', borderTop: '1px solid var(--color-border)', marginTop: '8px' }} className="md:hidden">
             {navItems.map(({ path, label, icon: Icon, badge }) => (
               <Link
                 key={path}
                 to={path}
                 onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                  isActive(path)
-                    ? 'bg-indigo-50 text-indigo-600'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px 16px',
+                  borderRadius: '10px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  marginTop: '4px',
+                  background: isActive(path) ? 'var(--color-accent-soft)' : 'transparent',
+                  color: isActive(path) ? 'var(--color-accent)' : 'var(--color-text-secondary)'
+                }}
               >
                 <Icon size={18} />
                 {label}
                 {badge !== undefined && badge > 0 && (
-                  <span className="ml-auto px-1.5 py-0.5 text-xs font-medium bg-red-500 text-white rounded-full">
+                  <span style={{
+                    marginLeft: 'auto',
+                    padding: '2px 8px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    background: '#EF4444',
+                    color: 'white',
+                    borderRadius: '9999px'
+                  }}>
                     {badge > 99 ? '99+' : badge}
                   </span>
                 )}
@@ -140,7 +262,7 @@ function NavBar({ user, onLogout, pendingCount = 0 }: NavBarProps) {
                 <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center">
                   <span className="text-white text-sm font-medium">{user.username[0].toUpperCase()}</span>
                 </div>
-                <span className="text-sm text-gray-700">{user.full_name || user.username}</span>
+                <span className="text-sm text-gray-700">{user.username}</span>
               </div>
             ) : (
               <Link
@@ -204,6 +326,7 @@ function App() {
           <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
           <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/my" element={<ProtectedRoute><MyCenter /></ProtectedRoute>} />
         </Routes>
       </div>
     </>

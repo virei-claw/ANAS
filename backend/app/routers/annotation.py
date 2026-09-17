@@ -38,19 +38,13 @@ def create_annotation(
         action="CREATE",
         resource="annotation",
         resource_id=str(annotation.id),
-        details=json.dumps(data.model_dump()),
+        details=json.dumps(data.model_dump(), default=str),
         ip_address=request.client.host if request.client else None
     )
     db.add(audit_log)
     db.commit()
 
-    return AnnotationResponse(
-        **annotation.__dict__,
-        part_name=annotation.part_name.name if annotation.part_name else None,
-        noise_type=annotation.noise_type.name if annotation.noise_type else None,
-        road_type=annotation.road_type.name if annotation.road_type else None,
-        annotator_name=annotation.annotator.full_name or annotation.annotator.username if annotation.annotator else None
-    )
+    return AnnotationResponse.model_validate(annotation)
 
 @router.get("", response_model=List[AnnotationResponse])
 def list_annotations(
@@ -58,7 +52,13 @@ def list_annotations(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    query = db.query(Annotation)
+    from sqlalchemy.orm import joinedload
+    query = db.query(Annotation).options(
+        joinedload(Annotation.part_name),
+        joinedload(Annotation.noise_type),
+        joinedload(Annotation.road_type),
+        joinedload(Annotation.annotator)
+    )
     if audio_id:
         query = query.filter(Annotation.audio_id == audio_id)
 
@@ -85,7 +85,7 @@ def list_annotations(
             noise_type=a.noise_type.name if a.noise_type else None,
             road_type=a.road_type.name if a.road_type else None,
             annotator_id=a.annotator_id,
-            annotator_name=a.annotator.full_name if a.annotator else None
+            annotator_name=a.annotator.username if a.annotator else None
         ))
     return result
 
@@ -120,9 +120,97 @@ def list_pending_annotations(
             noise_type=a.noise_type.name if a.noise_type else None,
             road_type=a.road_type.name if a.road_type else None,
             annotator_id=a.annotator_id,
-            annotator_name=a.annotator.full_name if a.annotator else None
+            annotator_name=a.annotator.username if a.annotator else None
         ))
     return result
+
+@router.get("/my", response_model=List[AnnotationResponse])
+def get_my_annotations(
+    status_filter: Optional[str] = Query(None, alias="status"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """获取当前用户的标注列表"""
+    from sqlalchemy.orm import joinedload
+    query = db.query(Annotation).options(
+        joinedload(Annotation.part_name),
+        joinedload(Annotation.noise_type),
+        joinedload(Annotation.road_type),
+        joinedload(Annotation.annotator),
+        joinedload(Annotation.audio)
+    ).filter(Annotation.annotator_id == current_user.id)
+
+    if status_filter:
+        query = query.filter(Annotation.status == status_filter)
+
+    annotations = query.order_by(Annotation.created_at.desc()).all()
+    result = []
+    for a in annotations:
+        result.append(AnnotationResponse(
+            id=a.id,
+            audio_id=a.audio_id,
+            part_name_id=a.part_name_id,
+            noise_type_id=a.noise_type_id,
+            road_type_id=a.road_type_id,
+            speed=a.speed,
+            temperature=a.temperature,
+            test_mode=a.test_mode,
+            reason=a.reason,
+            solution=a.solution,
+            start_time=a.start_time,
+            end_time=a.end_time,
+            clip_filepath=a.clip_filepath,
+            status=a.status,
+            created_at=a.created_at,
+            part_name=a.part_name.name if a.part_name else None,
+            noise_type=a.noise_type.name if a.noise_type else None,
+            road_type=a.road_type.name if a.road_type else None,
+            annotator_id=a.annotator_id,
+            annotator_name=a.annotator.username if a.annotator else None,
+            audio_filename=a.audio.filename if a.audio else None
+        ))
+    return result
+
+
+# ============ Template routes (must be before /{annotation_id}) ============
+@router.post("/templates", response_model=TemplateResponse)
+def create_template(
+    data: TemplateCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    template = AnnotationTemplate(**data.model_dump(), user_id=current_user.id)
+    db.add(template)
+    db.commit()
+    db.refresh(template)
+    return template
+
+
+@router.get("/templates", response_model=List[TemplateResponse])
+def list_templates(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    templates = db.query(AnnotationTemplate).filter(AnnotationTemplate.user_id == current_user.id).all()
+    return templates
+
+
+@router.delete("/templates/{template_id}")
+def delete_template(
+    template_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    template = db.query(AnnotationTemplate).filter(
+        AnnotationTemplate.id == template_id,
+        AnnotationTemplate.user_id == current_user.id
+    ).first()
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    db.delete(template)
+    db.commit()
+    return {"message": "Deleted"}
+
 
 @router.get("/{annotation_id}", response_model=AnnotationResponse)
 def get_annotation(
@@ -133,13 +221,7 @@ def get_annotation(
     annotation = db.query(Annotation).filter(Annotation.id == annotation_id).first()
     if not annotation:
         raise HTTPException(status_code=404, detail="Annotation not found")
-    return AnnotationResponse(
-        **annotation.__dict__,
-        part_name=annotation.part_name.name if annotation.part_name else None,
-        noise_type=annotation.noise_type.name if annotation.noise_type else None,
-        road_type=annotation.road_type.name if annotation.road_type else None,
-        annotator_name=annotation.annotator.full_name or annotation.annotator.username if annotation.annotator else None
-    )
+    return AnnotationResponse.model_validate(annotation)
 
 @router.put("/{annotation_id}", response_model=AnnotationResponse)
 def update_annotation(
@@ -168,19 +250,13 @@ def update_annotation(
         action="UPDATE",
         resource="annotation",
         resource_id=str(annotation_id),
-        details=json.dumps({"old": old_values, "new": data.model_dump(exclude_unset=True)}),
+        details=json.dumps({"old": old_values, "new": data.model_dump(exclude_unset=True)}, default=str),
         ip_address=request.client.host if request.client else None
     )
     db.add(audit_log)
     db.commit()
 
-    return AnnotationResponse(
-        **annotation.__dict__,
-        part_name=annotation.part_name.name if annotation.part_name else None,
-        noise_type=annotation.noise_type.name if annotation.noise_type else None,
-        road_type=annotation.road_type.name if annotation.road_type else None,
-        annotator_name=annotation.annotator.full_name or annotation.annotator.username if annotation.annotator else None
-    )
+    return AnnotationResponse.model_validate(annotation)
 
 @router.delete("/{annotation_id}")
 def delete_annotation(
@@ -345,42 +421,3 @@ def import_annotations(
         "failed": failed,
         "errors": errors
     }
-
-
-@router.post("/templates", response_model=TemplateResponse)
-def create_template(
-    data: TemplateCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    template = AnnotationTemplate(**data.model_dump(), user_id=current_user.id)
-    db.add(template)
-    db.commit()
-    db.refresh(template)
-    return template
-
-
-@router.get("/templates", response_model=List[TemplateResponse])
-def list_templates(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    templates = db.query(AnnotationTemplate).filter(AnnotationTemplate.user_id == current_user.id).all()
-    return templates
-
-
-@router.delete("/templates/{template_id}")
-def delete_template(
-    template_id: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    template = db.query(AnnotationTemplate).filter(
-        AnnotationTemplate.id == template_id,
-        AnnotationTemplate.user_id == current_user.id
-    ).first()
-    if not template:
-        raise HTTPException(status_code=404, detail="Template not found")
-    db.delete(template)
-    db.commit()
-    return {"message": "Deleted"}

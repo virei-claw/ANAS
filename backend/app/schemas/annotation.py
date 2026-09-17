@@ -50,6 +50,7 @@ class AnnotationResponse(BaseModel):
     road_type: Optional[str] = None
     annotator_id: Optional[UUID] = None
     annotator_name: Optional[str] = None
+    audio_filename: Optional[str] = None
 
     class Config:
         from_attributes = True
