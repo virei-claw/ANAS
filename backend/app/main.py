@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.database import engine, Base
-from app.routers import audio_router, annotation_router, dict_router, auth_router, review_router, export_router, project_router, webhook_router, stats_router, user_router
+from app.routers import audio_router, annotation_router, dict_router, auth_router, review_router, export_router, project_router, webhook_router, stats_router, user_router, audit_router
 from app.config import settings
 
 def init_roles():
@@ -63,6 +63,7 @@ app.include_router(project_router, prefix=settings.API_V1_STR)
 app.include_router(webhook_router, prefix=settings.API_V1_STR)
 app.include_router(stats_router, prefix=settings.API_V1_STR)
 app.include_router(user_router, prefix=settings.API_V1_STR)
+app.include_router(audit_router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 def root():

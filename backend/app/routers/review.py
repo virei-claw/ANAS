@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from datetime import datetime
 import json
@@ -7,6 +7,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.annotation import Annotation
 from app.models.annotation_history import AnnotationHistory
+from app.models.audit import AuditLog
 from app.routers.auth import get_current_user
 
 router = APIRouter(prefix="/annotations", tags=["review"])
@@ -22,6 +23,7 @@ def require_reviewer(current_user: User = Depends(get_current_user)):
 @router.put("/{annotation_id}/submit")
 def submit_annotation(
     annotation_id: str,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -29,6 +31,18 @@ def submit_annotation(
     annotation = db.query(Annotation).filter(Annotation.id == annotation_id).first()
     if not annotation:
         raise HTTPException(status_code=404, detail="标注不存在")
+
+    # Create audit log
+    audit_log = AuditLog(
+        id=str(uuid.uuid4()),
+        user_id=current_user.id,
+        action="SUBMIT",
+        resource="annotation",
+        resource_id=str(annotation_id),
+        details=json.dumps({"status": "submitted"}),
+        ip_address=request.client.host if request.client else None
+    )
+    db.add(audit_log)
 
     annotation.status = 'submitted'
     annotation.submitted_at = datetime.utcnow()
@@ -39,6 +53,7 @@ def submit_annotation(
 @router.put("/{annotation_id}/approve")
 def approve_annotation(
     annotation_id: str,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_reviewer)
 ):
@@ -61,6 +76,18 @@ def approve_annotation(
     )
     db.add(history)
 
+    # Create audit log
+    audit_log = AuditLog(
+        id=str(uuid.uuid4()),
+        user_id=current_user.id,
+        action="APPROVE",
+        resource="annotation",
+        resource_id=str(annotation_id),
+        details=json.dumps({"status": "approved"}),
+        ip_address=request.client.host if request.client else None
+    )
+    db.add(audit_log)
+
     annotation.status = 'approved'
     annotation.reviewed_by = current_user.id
     annotation.reviewed_at = datetime.utcnow()
@@ -72,6 +99,7 @@ def approve_annotation(
 def reject_annotation(
     annotation_id: str,
     reject_reason: str,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_reviewer)
 ):
@@ -94,6 +122,18 @@ def reject_annotation(
         change_reason=f"审核打回: {reject_reason}"
     )
     db.add(history)
+
+    # Create audit log
+    audit_log = AuditLog(
+        id=str(uuid.uuid4()),
+        user_id=current_user.id,
+        action="REJECT",
+        resource="annotation",
+        resource_id=str(annotation_id),
+        details=json.dumps({"status": "rejected", "reject_reason": reject_reason}),
+        ip_address=request.client.host if request.client else None
+    )
+    db.add(audit_log)
 
     annotation.status = 'rejected'
     annotation.reviewed_by = current_user.id

@@ -8,5 +8,6 @@ from app.routers.project import router as project_router
 from app.routers.webhook import router as webhook_router
 from app.routers.stats import router as stats_router
 from app.routers.user import router as user_router
+from app.routers.audit import router as audit_router
 
-__all__ = ["audio_router", "annotation_router", "dict_router", "auth_router", "review_router", "export_router", "project_router", "webhook_router", "stats_router", "user_router"]
+__all__ = ["audio_router", "annotation_router", "dict_router", "auth_router", "review_router", "export_router", "project_router", "webhook_router", "stats_router", "user_router", "audit_router"]

@@ -1,7 +1,8 @@
 import csv
 import uuid
+import json
 from datetime import datetime
-from fastapi import APIRouter, HTTPException, Depends, Query, Body, UploadFile, File
+from fastapi import APIRouter, HTTPException, Depends, Query, Body, UploadFile, File, Request
 from sqlalchemy.orm import Session
 from typing import Optional, List
 
@@ -11,6 +12,7 @@ from app.models.annotation_template import AnnotationTemplate
 from app.models.dict import PartName, NoiseType, RoadType
 from app.models.user import User
 from app.models.audio import AudioFile
+from app.models.audit import AuditLog
 from app.schemas.annotation import AnnotationCreate, AnnotationUpdate, AnnotationResponse
 from app.schemas.template import TemplateCreate, TemplateResponse
 from app.routers.auth import get_current_user
@@ -20,6 +22,7 @@ router = APIRouter(prefix="/annotations", tags=["annotations"])
 @router.post("", response_model=AnnotationResponse)
 def create_annotation(
     data: AnnotationCreate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -27,6 +30,20 @@ def create_annotation(
     db.add(annotation)
     db.commit()
     db.refresh(annotation)
+
+    # Create audit log
+    audit_log = AuditLog(
+        id=str(uuid.uuid4()),
+        user_id=current_user.id,
+        action="CREATE",
+        resource="annotation",
+        resource_id=str(annotation.id),
+        details=json.dumps(data.model_dump()),
+        ip_address=request.client.host if request.client else None
+    )
+    db.add(audit_log)
+    db.commit()
+
     return AnnotationResponse(
         **annotation.__dict__,
         part_name=annotation.part_name.name if annotation.part_name else None,
@@ -128,6 +145,7 @@ def get_annotation(
 def update_annotation(
     annotation_id: uuid.UUID,
     data: AnnotationUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -135,11 +153,27 @@ def update_annotation(
     if not annotation:
         raise HTTPException(status_code=404, detail="Annotation not found")
 
+    old_values = {k: getattr(annotation, k) for k in data.model_dump(exclude_unset=True).keys()}
+
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(annotation, key, value)
 
     db.commit()
     db.refresh(annotation)
+
+    # Create audit log
+    audit_log = AuditLog(
+        id=str(uuid.uuid4()),
+        user_id=current_user.id,
+        action="UPDATE",
+        resource="annotation",
+        resource_id=str(annotation_id),
+        details=json.dumps({"old": old_values, "new": data.model_dump(exclude_unset=True)}),
+        ip_address=request.client.host if request.client else None
+    )
+    db.add(audit_log)
+    db.commit()
+
     return AnnotationResponse(
         **annotation.__dict__,
         part_name=annotation.part_name.name if annotation.part_name else None,
@@ -151,12 +185,26 @@ def update_annotation(
 @router.delete("/{annotation_id}")
 def delete_annotation(
     annotation_id: uuid.UUID,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     annotation = db.query(Annotation).filter(Annotation.id == annotation_id).first()
     if not annotation:
         raise HTTPException(status_code=404, detail="Annotation not found")
+
+    # Create audit log before deletion
+    audit_log = AuditLog(
+        id=str(uuid.uuid4()),
+        user_id=current_user.id,
+        action="DELETE",
+        resource="annotation",
+        resource_id=str(annotation_id),
+        details=json.dumps({"deleted_annotation": str(annotation_id)}),
+        ip_address=request.client.host if request.client else None
+    )
+    db.add(audit_log)
+
     db.delete(annotation)
     db.commit()
     return {"message": "Deleted"}
