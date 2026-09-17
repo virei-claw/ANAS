@@ -110,3 +110,27 @@ def get_user_workload_stats(
 
     results = query.all()
     return [{"user_id": r[0], "username": r[1], "full_name": r[2], "count": r[3]} for r in results]
+
+
+@router.get("/my-workload")
+def get_my_workload(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """获取当前用户的个人工作量统计"""
+    pending = db.query(Annotation).filter(
+        Annotation.annotator_id == current_user.id,
+        Annotation.status == 'draft'
+    ).count()
+
+    reviewing = db.query(Annotation).filter(
+        Annotation.annotator_id == current_user.id,
+        Annotation.status == 'submitted'
+    ).count()
+
+    completed = db.query(Annotation).filter(
+        Annotation.annotator_id == current_user.id,
+        Annotation.status == 'approved'
+    ).count()
+
+    return {"pending": pending, "reviewing": reviewing, "completed": completed}

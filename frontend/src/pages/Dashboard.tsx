@@ -26,9 +26,16 @@ interface UserWorkload {
   count: number
 }
 
+interface MyWorkload {
+  pending: number
+  reviewing: number
+  completed: number
+}
+
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [userWorkload, setUserWorkload] = useState<UserWorkload[]>([])
+  const [myWorkload, setMyWorkload] = useState<MyWorkload>({ pending: 0, reviewing: 0, completed: 0 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -38,12 +45,14 @@ export default function Dashboard() {
   const loadStats = async () => {
     setLoading(true)
     try {
-      const [statsResp, workloadResp] = await Promise.all([
+      const [statsResp, workloadResp, myWorkloadResp] = await Promise.all([
         api.get('/stats/dashboard'),
-        api.get('/stats/user-workload')
+        api.get('/stats/user-workload'),
+        api.get('/stats/my-workload')
       ])
       setStats(statsResp.data)
       setUserWorkload(workloadResp.data)
+      setMyWorkload(myWorkloadResp.data)
     } catch {
       toast.error('加载失败')
     } finally {
@@ -73,9 +82,32 @@ export default function Dashboard() {
     { label: '待审核', value: stats.status_counts.submitted, icon: Clock, color: 'bg-orange-500' },
   ]
 
+  const workloadColors = {
+    yellow: 'bg-yellow-50 border-yellow-200 text-yellow-800',
+    blue: 'bg-blue-50 border-blue-200 text-blue-800',
+    green: 'bg-green-50 border-green-200 text-green-800'
+  }
+
+  const workloadCards = [
+    { title: '待标注', count: myWorkload.pending, color: 'yellow' as const },
+    { title: '审核中', count: myWorkload.reviewing, color: 'blue' as const },
+    { title: '已完成', count: myWorkload.completed, color: 'green' as const },
+  ]
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">统计分析</h1>
+
+      {/* 个人工作台 */}
+      <h2 className="text-xl font-semibold mb-4">个人工作台</h2>
+      <div className="grid grid-cols-3 gap-4 mb-8">
+        {workloadCards.map(({ title, count, color }) => (
+          <div key={title} className={`p-4 rounded-lg border ${workloadColors[color]}`}>
+            <div className="text-2xl font-bold">{count}</div>
+            <div className="text-sm">{title}</div>
+          </div>
+        ))}
+      </div>
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

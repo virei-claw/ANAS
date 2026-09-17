@@ -81,3 +81,32 @@ async def test_user_workload_stats_with_auth():
             assert "username" in item
             assert "full_name" in item
             assert "count" in item
+
+
+@pytest.mark.asyncio
+async def test_my_workload_requires_auth():
+    """Test my-workload endpoint requires auth."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/stats/my-workload")
+        assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_my_workload_with_auth():
+    """Test my-workload endpoint returns pending/reviewing/completed counts."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        token = await get_auth_token(client, "myworkloaduser")
+        response = await client.get("/api/stats/my-workload",
+            headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 200
+        data = response.json()
+        # Verify response structure
+        assert "pending" in data
+        assert "reviewing" in data
+        assert "completed" in data
+        # Verify all values are integers
+        assert isinstance(data["pending"], int)
+        assert isinstance(data["reviewing"], int)
+        assert isinstance(data["completed"], int)
