@@ -448,71 +448,83 @@ export default function AudioDetail() {
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold mb-4">标注列表 ({annotations.length})</h2>
+      <div style={{
+        background: 'white',
+        borderRadius: '16px',
+        padding: '24px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)',
+        border: '1px solid #F3F4F6'
+      }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#111827', margin: '0 0 20px 0' }}>标注列表 ({annotations.length})</h2>
         {annotations.length === 0 ? (
-          <div className="text-gray-500 text-center py-4">暂无标注</div>
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#9CA3AF', fontSize: '14px' }}>暂无标注</div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b text-left">
-                <th className="py-2">零部件</th>
-                <th className="py-2">异响类型</th>
-                <th className="py-2">路面</th>
-                <th className="py-2">车速</th>
-                <th className="py-2">温度</th>
-                <th className="py-2">场景</th>
-                <th className="py-2">时间段</th>
-                <th className="py-2">标注用户</th>
-                <th className="py-2">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {annotations.map((ann) => (
-                <tr key={ann.id} className="border-b">
-                  <td className="py-2">{ann.part_name || '-'}</td>
-                  <td className="py-2">{ann.noise_type || '-'}</td>
-                  <td className="py-2">{ann.road_type || '-'}</td>
-                  <td className="py-2">{ann.speed ?? '-'}</td>
-                  <td className="py-2">{ann.temperature ?? '-'}</td>
-                  <td className="py-2">{ann.test_mode === 'dynamic' ? '动态' : '静态'}</td>
-                  <td className="py-2 font-mono text-sm">{formatTime(ann.start_time)} - {formatTime(ann.end_time)}</td>
-                  <td className="py-2">{ann.annotator_name || '未知'}</td>
-                  <td className="py-2 flex gap-2">
-                    <button
-                      onClick={() => setSelectedAnnotation(ann)}
-                      className="text-indigo-600 hover:underline text-sm"
-                    >
-                      查看详情
-                    </button>
-                    {ann.status === 'draft' && (
-                      <button
-                        onClick={async () => {
-                          if (!confirm('确定提交审核?')) return
-                          await annotationApi.submit(ann.id)
-                          toast.success('已提交审核')
-                          loadData()
-                        }}
-                        className="text-blue-600 hover:underline text-sm"
-                      >
-                        提交审核
-                      </button>
-                    )}
-                    <button
-                      onClick={async () => {
-                        if (!confirm('确定删除?')) return
-                        await annotationApi.delete(ann.id)
-                        loadData()
-                      }}
-                      className="text-red-600 hover:underline text-sm"
-                    >
-                      删除
-                    </button>
-                  </td>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#F9FAFB', borderBottom: '2px solid #E5E7EB' }}>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #E5E7EB' }}>零部件</th>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #E5E7EB' }}>异响类型</th>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #E5E7EB' }}>路面</th>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #E5E7EB' }}>车速</th>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #E5E7EB' }}>温度</th>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #E5E7EB' }}>场景</th>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #E5E7EB' }}>时间段</th>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #E5E7EB' }}>标注用户</th>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #E5E7EB' }}>操作</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {annotations.map((ann) => (
+                  <tr key={ann.id} style={{ borderBottom: '1px solid #F3F4F6', transition: 'background 0.15s ease' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#F9FAFB' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}>
+                    <td style={{ padding: '14px 16px', fontSize: '14px', color: '#374151' }}>{ann.part_name || '-'}</td>
+                    <td style={{ padding: '14px 16px', fontSize: '14px', color: '#374151' }}>{ann.noise_type || '-'}</td>
+                    <td style={{ padding: '14px 16px', fontSize: '14px', color: '#374151' }}>{ann.road_type || '-'}</td>
+                    <td style={{ padding: '14px 16px', fontSize: '14px', color: '#374151' }}>{ann.speed ?? '-'}</td>
+                    <td style={{ padding: '14px 16px', fontSize: '14px', color: '#374151' }}>{ann.temperature ?? '-'}</td>
+                    <td style={{ padding: '14px 16px', fontSize: '14px', color: '#374151' }}>{ann.test_mode === 'dynamic' ? '动态' : ann.test_mode === 'static' ? '静态' : '-'}</td>
+                    <td style={{ padding: '14px 16px', fontFamily: 'var(--font-display)', fontSize: '13px', color: '#374151', fontVariantNumeric: 'tabular-nums' }}>{formatTime(ann.start_time)} - {formatTime(ann.end_time)}</td>
+                    <td style={{ padding: '14px 16px', fontSize: '14px', color: '#6B7280' }}>{ann.annotator_name || '未知'}</td>
+                    <td style={{ padding: '14px 16px' }}>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => setSelectedAnnotation(ann)}
+                          style={{ fontSize: '14px', color: '#2563EB', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                        >
+                          查看详情
+                        </button>
+                        {ann.status === 'draft' && (
+                          <button
+                            onClick={async () => {
+                              if (!confirm('确定提交审核?')) return
+                              await annotationApi.submit(ann.id)
+                              toast.success('已提交审核')
+                              loadData()
+                            }}
+                            style={{ fontSize: '14px', color: '#2563EB', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                          >
+                            提交审核
+                          </button>
+                        )}
+                        <button
+                          onClick={async () => {
+                            if (!confirm('确定删除?')) return
+                            await annotationApi.delete(ann.id)
+                            loadData()
+                          }}
+                          style={{ fontSize: '14px', color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                        >
+                          删除
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

@@ -313,87 +313,89 @@ export default function AudioList() {
       {loading ? (
         <AudioTableSkeleton />
       ) : audios.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-lg shadow">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Upload className="text-gray-400" size={32} />
+        <div style={{ textAlign: 'center', padding: '64px 0', background: 'white', borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)' }}>
+          <div style={{ width: '64px', height: '64px', background: '#F3F4F6', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <Upload size={32} color="#9CA3AF" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900">暂无音频文件</h3>
-          <p className="text-gray-500 mt-1">点击上方按钮上传第一个音频</p>
+          <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#111827', margin: 0 }}>暂无音频文件</h3>
+          <p style={{ fontSize: '14px', color: '#6B7280', marginTop: '8px' }}>点击上方按钮上传第一个音频</p>
         </div>
       ) : (
         <>
-          <table className="w-full bg-white rounded-lg shadow">
-            <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="px-4 py-3 font-medium text-gray-600 w-12">
-                  <CheckSquare size={18} className="cursor-pointer hover:text-indigo-600" onClick={toggleSelectAll} />
-                </th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">文件名</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">时长</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">大小</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">上传用户</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">上传时间</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {audios.map((audio) => (
-                <tr
-                  key={audio.id}
-                  className={`border-b hover:bg-gray-50 relative ${selectedIds.has(audio.id) ? 'bg-indigo-50' : ''}`}
-                  onMouseEnter={() => handleRowHover(audio.id)}
-                  onMouseLeave={handleRowLeave}
-                >
-                  <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(audio.id)}
-                      onChange={() => toggleSelect(audio.id)}
-                      className="w-4 h-4 rounded"
-                    />
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link to={`/audio/${audio.id}`} className="text-indigo-600 hover:underline">
-                      {audio.filename}
-                    </Link>
-                    {hoveredAudioId === audio.id && (annotationsLoading || hoveredAnnotations.length > 0) && (
-                      <div className="absolute left-4 top-full mt-1 z-50 bg-white shadow-lg rounded-lg border p-3 min-w-80 max-w-96">
-                        {annotationsLoading ? (
-                          <div className="text-sm text-gray-500">加载中...</div>
-                        ) : hoveredAnnotations.length === 0 ? (
-                          <div className="text-sm text-gray-500">暂无标注</div>
-                        ) : (
-                          <>
-                            <div className="text-xs text-gray-500 mb-2 font-medium">标注时间段预览</div>
-                            <div className="space-y-2">
-                              {hoveredAnnotations.map((ann) => (
-                                <div key={ann.id} className="text-sm border-b border-gray-100 pb-2 last:border-0 last:pb-0">
-                                  <div className="font-mono text-gray-700">
-                                    {formatTime(ann.start_time)} - {formatTime(ann.end_time)}
-                                  </div>
-                                  <div className="text-gray-500 text-xs mt-1">
-                                    {ann.part_name || '未知零部件'} - {ann.noise_type || '未知异响'}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">{formatDuration(audio.duration)}</td>
-                  <td className="px-4 py-3">{formatFileSize(audio.file_size)}</td>
-                  <td className="px-4 py-3">{audio.uploader_name || '未知'}</td>
-                  <td className="px-4 py-3">{new Date(audio.created_at).toLocaleString()}</td>
-                  <td className="px-4 py-3">
-                    <Link to={`/audio/${audio.id}`} className="text-indigo-600 hover:underline mr-4">查看</Link>
-                    <button onClick={() => handleDelete(audio.id)} className="text-red-600 hover:underline">删除</button>
-                  </td>
+          <div style={{ background: 'white', borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)', border: '1px solid #F3F4F6', overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#F9FAFB', borderBottom: '2px solid #E5E7EB' }}>
+                  <th style={{ width: '48px', padding: '12px 16px' }}>
+                    <CheckSquare size={18} style={{ cursor: 'pointer', color: '#6B7280' }} onClick={toggleSelectAll} />
+                  </th>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #E5E7EB' }}>文件名</th>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #E5E7EB' }}>时长</th>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #E5E7EB' }}>大小</th>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #E5E7EB' }}>上传用户</th>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #E5E7EB' }}>上传时间</th>
+                  <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #E5E7EB' }}>操作</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {audios.map((audio) => (
+                  <tr
+                    key={audio.id}
+                    style={{ borderBottom: '1px solid #F3F4F6', transition: 'background 0.15s ease', background: selectedIds.has(audio.id) ? '#EEF2FF' : 'transparent' }}
+                    onMouseEnter={() => { handleRowHover(audio.id); }}
+                    onMouseLeave={handleRowLeave}
+                  >
+                    <td style={{ padding: '12px 16px' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(audio.id)}
+                        onChange={() => toggleSelect(audio.id)}
+                        style={{ width: '16px', height: '16px', borderRadius: '4px' }}
+                      />
+                    </td>
+                    <td style={{ padding: '12px 16px', position: 'relative' }}>
+                      <Link to={`/audio/${audio.id}`} style={{ fontSize: '14px', fontWeight: 500, color: '#2563EB', textDecoration: 'none' }}>
+                        {audio.filename}
+                      </Link>
+                      {hoveredAudioId === audio.id && (annotationsLoading || hoveredAnnotations.length > 0) && (
+                        <div style={{ position: 'absolute', left: '16px', top: '100%', marginTop: '4px', zIndex: 50, background: 'white', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', borderRadius: '12px', border: '1px solid #E5E7EB', padding: '12px', minWidth: '320px', maxWidth: '384px' }}>
+                          {annotationsLoading ? (
+                            <div style={{ fontSize: '14px', color: '#6B7280' }}>加载中...</div>
+                          ) : hoveredAnnotations.length === 0 ? (
+                            <div style={{ fontSize: '14px', color: '#6B7280' }}>暂无标注</div>
+                          ) : (
+                            <>
+                              <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '8px', fontWeight: 500 }}>标注时间段预览</div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {hoveredAnnotations.map((ann) => (
+                                  <div key={ann.id} style={{ fontSize: '14px', borderBottom: '1px solid #F3F4F6', paddingBottom: '8px' }}>
+                                    <div style={{ fontFamily: 'var(--font-display)', color: '#374151' }}>
+                                      {formatTime(ann.start_time)} - {formatTime(ann.end_time)}
+                                    </div>
+                                    <div style={{ color: '#6B7280', fontSize: '12px', marginTop: '4px' }}>
+                                      {ann.part_name || '未知零部件'} - {ann.noise_type || '未知异响'}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ padding: '12px 16px', fontSize: '14px', color: '#374151' }}>{formatDuration(audio.duration)}</td>
+                    <td style={{ padding: '12px 16px', fontSize: '14px', color: '#374151' }}>{formatFileSize(audio.file_size)}</td>
+                    <td style={{ padding: '12px 16px', fontSize: '14px', color: '#374151' }}>{audio.uploader_name || '未知'}</td>
+                    <td style={{ padding: '12px 16px', fontSize: '14px', color: '#6B7280' }}>{new Date(audio.created_at).toLocaleString()}</td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <Link to={`/audio/${audio.id}`} style={{ fontSize: '14px', color: '#2563EB', textDecoration: 'none', marginRight: '16px' }}>查看</Link>
+                      <button onClick={() => handleDelete(audio.id)} style={{ fontSize: '14px', color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>删除</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <Pagination current={currentPage} total={total} pageSize={pageSize} onPageChange={setCurrentPage} />
         </>
       )}
