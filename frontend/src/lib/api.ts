@@ -52,7 +52,7 @@ export interface Annotation {
   start_time: number
   end_time: number
   clip_filepath: string | null
-  custom_dict_items?: Record<string, string> | null
+  custom_dict_items?: Record<string, {id: string, name: string}> | null
   status: string
   created_at: string
   part_name: string | null

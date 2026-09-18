@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 from datetime import datetime
 from uuid import UUID
 
@@ -18,7 +18,7 @@ class AnnotationCreate(AnnotationBase):
     part_name_id: Optional[UUID] = None
     noise_type_id: Optional[UUID] = None
     road_type_id: Optional[UUID] = None
-    custom_dict_items: Optional[Dict[str, str]] = None  # {dict_type_id: item_id}
+    custom_dict_items: Optional[Dict[str, Dict[str, str]] = None  # {dict_type_id: {id, name}}
 
 class AnnotationUpdate(BaseModel):
     part_name_id: Optional[UUID] = None
@@ -44,7 +44,7 @@ class AnnotationResponse(BaseModel):
     start_time: float
     end_time: float
     clip_filepath: Optional[str] = None
-    custom_dict_items: Optional[Dict] = None
+    custom_dict_items: Optional[Dict[str, Dict[str, str]] = None  # {dict_type_id: {id, name}}
     status: str
     created_at: datetime
     part_name: Optional[str] = None

@@ -138,11 +138,16 @@ export default function AnnotationForm({ audioId, startTime, endTime, onSuccess,
       // 1. 先裁剪音频片段
       const clipResult = await audioApi.clip(audioId, startTime, endTime)
 
-      // 2. 构建自定义字典条目数据
-      const custom_dict_items: Record<string, string> = {}
+      // 2. 构建自定义字典条目数据（包含ID和名称）
+      const custom_dict_items: Record<string, {id: string, name: string}> = {}
       Object.entries(selectedCustomItems).forEach(([typeId, itemId]) => {
         if (itemId) {
-          custom_dict_items[typeId] = itemId
+          // 查找对应的 item 名称
+          const items = customTypeItems[typeId] || []
+          const item = items.find(i => i.id === itemId)
+          if (item) {
+            custom_dict_items[typeId] = { id: itemId, name: item.name }
+          }
         }
       })
 

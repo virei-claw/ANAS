@@ -482,6 +482,11 @@ export default function AudioDetail() {
                     <td style={{ padding: '14px 16px', fontSize: '14px', color: '#374151' }}>{ann.part_name || '-'}</td>
                     <td style={{ padding: '14px 16px', fontSize: '14px', color: '#374151' }}>{ann.noise_type || '-'}</td>
                     <td style={{ padding: '14px 16px', fontSize: '14px', color: '#374151' }}>{ann.road_type || '-'}</td>
+                    {ann.custom_dict_items && Object.keys(ann.custom_dict_items).length > 0 && (
+                      <td style={{ padding: '14px 16px', fontSize: '14px', color: '#374151' }}>
+                        {Object.values(ann.custom_dict_items).map((item: any) => item.name).join(', ')}
+                      </td>
+                    )}
                     <td style={{ padding: '14px 16px', fontSize: '14px', color: '#374151' }}>{ann.speed ?? '-'}</td>
                     <td style={{ padding: '14px 16px', fontSize: '14px', color: '#374151' }}>{ann.temperature ?? '-'}</td>
                     <td style={{ padding: '14px 16px', fontSize: '14px', color: '#374151' }}>{ann.test_mode === 'dynamic' ? '动态' : ann.test_mode === 'static' ? '静态' : '-'}</td>
