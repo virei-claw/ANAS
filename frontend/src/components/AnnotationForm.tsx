@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { annotationApi, dictApi, audioApi, DictItem } from '@/lib/api'
+import { annotationApi, dictApi, audioApi, DictItem, DictType, DictTypeItem } from '@/lib/api'
 import { useAnnotationTemplate, AnnotationTemplate } from '@/hooks/useAnnotationTemplate'
 import toast from 'react-hot-toast'
 
@@ -22,6 +22,11 @@ export default function AnnotationForm({ audioId, startTime, endTime, onSuccess,
   const [showAddNoise, setShowAddNoise] = useState(false)
   const [showAddRoad, setShowAddRoad] = useState(false)
 
+  // 自定义字典类型
+  const [customTypes, setCustomTypes] = useState<DictType[]>([])
+  const [customTypeItems, setCustomTypeItems] = useState<Record<string, DictTypeItem[]>>({})
+  const [selectedCustomItems, setSelectedCustomItems] = useState<Record<string, string>>({})
+
   const { templates, create: createTemplate } = useAnnotationTemplate()
   const [templateName, setTemplateName] = useState('')
   const [showSaveTemplate, setShowSaveTemplate] = useState(false)
@@ -42,14 +47,30 @@ export default function AnnotationForm({ audioId, startTime, endTime, onSuccess,
   }, [])
 
   const loadDict = async () => {
-    const [parts, noises, roads] = await Promise.all([
+    const [parts, noises, roads, types] = await Promise.all([
       dictApi.partNames.list(),
       dictApi.noiseTypes.list(),
       dictApi.roadTypes.list(),
+      dictApi.types.list(),
     ])
     setPartNames(parts.data)
     setNoiseTypes(noises.data)
     setRoadTypes(roads.data)
+    setCustomTypes(types.data)
+
+    // 加载每个自定义类型的条目
+    const itemsMap: Record<string, DictTypeItem[]> = {}
+    await Promise.all(
+      types.data.map(async (type) => {
+        const resp = await dictApi.types.items.list(type.id)
+        itemsMap[type.id] = resp.data
+      })
+    )
+    setCustomTypeItems(itemsMap)
+  }
+
+  const handleCustomItemChange = (typeId: string, itemId: string) => {
+    setSelectedCustomItems(prev => ({ ...prev, [typeId]: itemId }))
   }
 
   const applyTemplate = (template: AnnotationTemplate) => {
@@ -117,7 +138,15 @@ export default function AnnotationForm({ audioId, startTime, endTime, onSuccess,
       // 1. 先裁剪音频片段
       const clipResult = await audioApi.clip(audioId, startTime, endTime)
 
-      // 2. 创建标注，包含裁剪后的文件路径
+      // 2. 构建自定义字典条目数据
+      const custom_dict_items: Record<string, string> = {}
+      Object.entries(selectedCustomItems).forEach(([typeId, itemId]) => {
+        if (itemId) {
+          custom_dict_items[typeId] = itemId
+        }
+      })
+
+      // 3. 创建标注，包含裁剪后的文件路径
       await annotationApi.create({
         audio_id: audioId,
         start_time: startTime,
@@ -131,6 +160,7 @@ export default function AnnotationForm({ audioId, startTime, endTime, onSuccess,
         reason: form.reason || null,
         solution: form.solution || null,
         clip_filepath: clipResult.data.clip_filepath,
+        custom_dict_items: Object.keys(custom_dict_items).length > 0 ? custom_dict_items : null,
       })
       onSuccess()
     } catch (err: any) {
@@ -321,6 +351,23 @@ export default function AnnotationForm({ audioId, startTime, endTime, onSuccess,
             </label>
           </div>
         </div>
+
+        {/* 自定义字典类型 */}
+        {customTypes.map((type) => (
+          <div key={type.id}>
+            <label className="block text-sm font-medium mb-1">{type.type_name}</label>
+            <select
+              value={selectedCustomItems[type.id] || ''}
+              onChange={(e) => handleCustomItemChange(type.id, e.target.value)}
+              className="w-full border rounded px-2 py-1"
+            >
+              <option value="">请选择</option>
+              {(customTypeItems[type.id] || []).map((item) => (
+                <option key={item.id} value={item.id}>{item.name}</option>
+              ))}
+            </select>
+          </div>
+        ))}
       </div>
 
       {/* 原因 */}

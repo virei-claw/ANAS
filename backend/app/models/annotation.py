@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Text, Integer, Float, DateTime, ForeignKey
+from sqlalchemy import Column, String, Text, Integer, Float, DateTime, ForeignKey, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -21,6 +21,7 @@ class Annotation(Base):
     start_time = Column(Float, nullable=False)
     end_time = Column(Float, nullable=False)
     clip_filepath = Column(String(500), nullable=True)  # 裁剪后的音频片段路径
+    custom_dict_items = Column(JSON, nullable=True)  # {dict_type_id: item_id}
     status = Column(String(20), default='draft')  # draft, submitted, approved, rejected
     submitted_at = Column(DateTime, nullable=True)
     reviewed_by = Column(String(36), ForeignKey('users.id'), nullable=True)

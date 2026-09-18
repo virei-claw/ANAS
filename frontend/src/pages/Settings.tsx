@@ -565,7 +565,6 @@ function DictTypeTable({ type, items, newValue, onChange, onAdd, onDeleteItem, o
             fontFamily: 'var(--font-display)',
             margin: 0
           }}>{type.type_name}</h2>
-          <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{type.type_code}</span>
         </div>
         {isAdmin && onDeleteType && (
           <button
