@@ -41,7 +41,8 @@ class TestAnomalyDetectorService:
              patch('librosa.feature.spectral_centroid') as mock_centroid:
             sr = 22050
             # 模拟频谱质心数据：正常区域均值低，异常区域均值高
-            centroid = np.array([400, 410, 390, 405, 2000, 2100, 1950, 2050, 400, 395])
+            # librosa.feature.spectral_centroid 返回 shape=(1, n_frames)
+            centroid = np.array([[400, 410, 390, 405, 2000, 2100, 1950, 2050, 400, 395]])
             mock_centroid.return_value = centroid
             mock_load.return_value = (np.zeros(1000), sr)
 
@@ -60,7 +61,8 @@ class TestAnomalyDetectorService:
              patch('librosa.feature.spectral_centroid') as mock_centroid:
             sr = 22050
             # 所有帧的频谱质心都相同（无异常）
-            centroid = np.array([400, 410, 390, 405, 400, 410, 390, 405])
+            # librosa.feature.spectral_centroid 返回 shape=(1, n_frames)
+            centroid = np.array([[400, 410, 390, 405, 400, 410, 390, 405]])
             mock_centroid.return_value = centroid
             mock_load.return_value = (np.zeros(1000), sr)
 
@@ -79,7 +81,8 @@ class TestAnomalyDetectorService:
              patch('librosa.feature.spectral_centroid') as mock_centroid:
             sr = 22050
             # 创建明显异常的频谱质心数据
-            centroid = np.array([500] * 100 + [2000] * 100 + [500] * 100)
+            # librosa.feature.spectral_centroid 返回 shape=(1, n_frames)
+            centroid = np.array([[500] * 100 + [2000] * 100 + [500] * 100])
             mock_centroid.return_value = centroid
             mock_load.return_value = (np.zeros(10000), sr)
 
@@ -114,13 +117,22 @@ class TestAnomalyDetectorAPI:
         """测试检测不存在的音频返回404"""
         from httpx import AsyncClient, ASGITransport
         from app.main import app
-        from app.core.security import create_access_token
 
-        # 创建测试token
-        token = create_access_token(data={"sub": "testuser"})
+        async def get_auth_token(client: AsyncClient, username: str = "detecttest") -> str:
+            """Helper: get auth token by registering and logging in."""
+            await client.post("/api/auth/register", json={
+                "username": username,
+                "email": f"{username}@test.com",
+                "password": "testpass123"
+            })
+            resp = await client.post("/api/auth/login",
+                data={"username": username, "password": "testpass123"},
+                headers={"Content-Type": "application/x-www-form-urlencoded"})
+            return resp.json()["access_token"]
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
+            token = await get_auth_token(client, "detecttest")
             response = await client.get(
                 "/api/audio/00000000-0000-0000-0000-000000000001/detect-anomalies",
                 headers={"Authorization": f"Bearer {token}"}
@@ -132,12 +144,22 @@ class TestAnomalyDetectorAPI:
         """测试检测端点接受threshold参数"""
         from httpx import AsyncClient, ASGITransport
         from app.main import app
-        from app.core.security import create_access_token
 
-        token = create_access_token(data={"sub": "testuser"})
+        async def get_auth_token(client: AsyncClient, username: str = "detecttest2") -> str:
+            """Helper: get auth token by registering and logging in."""
+            await client.post("/api/auth/register", json={
+                "username": username,
+                "email": f"{username}@test.com",
+                "password": "testpass123"
+            })
+            resp = await client.post("/api/auth/login",
+                data={"username": username, "password": "testpass123"},
+                headers={"Content-Type": "application/x-www-form-urlencoded"})
+            return resp.json()["access_token"]
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
+            token = await get_auth_token(client, "detecttest2")
             response = await client.get(
                 "/api/audio/00000000-0000-0000-0000-000000000001/detect-anomalies?threshold=0.3",
                 headers={"Authorization": f"Bearer {token}"}

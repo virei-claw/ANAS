@@ -31,7 +31,6 @@ function NavBar({ user, onLogout, pendingCount = 0 }: NavBarProps) {
 
   const navItems = [
     { path: '/', label: '音频管理', icon: Home },
-    { path: '/my', label: '我的', icon: User },
     { path: '/projects', label: '项目管理', icon: FolderOpen },
     // 仅管理员显示审核队列
     ...(isAdmin ? [{ path: '/review', label: '审核队列', icon: User, badge: pendingCount }] : []),
@@ -40,6 +39,7 @@ function NavBar({ user, onLogout, pendingCount = 0 }: NavBarProps) {
     { path: '/import', label: '批量导入', icon: Upload },
     // 仅管理员显示设置中的用户管理
     { path: '/settings', label: '设置', icon: SettingsIcon },
+    { path: '/my', label: '我的', icon: User },
   ]
 
   const isActive = (path: string) => location.pathname === path
@@ -80,7 +80,6 @@ function NavBar({ user, onLogout, pendingCount = 0 }: NavBarProps) {
             }}>
               <span style={{ color: 'white', fontWeight: 700, fontSize: '14px', fontFamily: 'var(--font-display)' }}>AN</span>
             </div>
-            <span style={{ fontSize: '18px', fontWeight: 700, color: '#111827', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>ANAS</span>
           </Link>
 
           {/* Desktop Nav */}

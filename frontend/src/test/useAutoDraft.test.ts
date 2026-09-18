@@ -55,8 +55,8 @@ describe('useAutoDraft', () => {
 
     const draft = result.current.restoreDraft()
     expect(draft).not.toBeNull()
-    expect(draft.data.reason).toBe('test reason')
-    expect(draft.data.part_name).toBe('engine')
+    expect(draft!.data.reason).toBe('test reason')
+    expect(draft!.data.part_name).toBe('engine')
   })
 
   it('清除草稿', () => {

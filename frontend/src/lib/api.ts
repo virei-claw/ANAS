@@ -77,6 +77,20 @@ export interface DictItem {
   name: string
 }
 
+export interface DictType {
+  id: string
+  type_name: string
+  type_code: string
+  created_at: string
+}
+
+export interface DictTypeItem {
+  id: string
+  dict_type_id: string
+  name: string
+  created_at: string
+}
+
 export interface User {
   id: string
   username: string
@@ -199,6 +213,19 @@ export const dictApi = {
     list: () => api.get<DictItem[]>('/dict/road-types'),
     create: (name: string) => api.post<DictItem>('/dict/road-types', { name }),
     delete: (id: string) => api.delete(`/dict/road-types/${id}`),
+  },
+  types: {
+    list: () => api.get<DictType[]>('/dict/types'),
+    create: (data: { type_name: string; type_code: string }) =>
+      api.post<DictType>('/dict/types', data),
+    delete: (type_id: string) => api.delete(`/dict/types/${type_id}`),
+    items: {
+      list: (type_id: string) => api.get<DictTypeItem[]>(`/dict/types/${type_id}/items`),
+      create: (type_id: string, name: string) =>
+        api.post<DictTypeItem>(`/dict/types/${type_id}/items`, { name }),
+      delete: (type_id: string, item_id: string) =>
+        api.delete(`/dict/types/${type_id}/items/${item_id}`),
+    },
   },
 }
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Body
 from sqlalchemy.orm import Session
 from datetime import datetime
 import json
@@ -98,10 +98,10 @@ def approve_annotation(
 @router.put("/{annotation_id}/reject")
 def reject_annotation(
     annotation_id: str,
-    reject_reason: str,
-    request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_reviewer)
+    request: Request = None,
+    current_user: User = Depends(require_reviewer),
+    reject_reason: str = Body(...)
 ):
     """审核打回"""
     annotation = db.query(Annotation).filter(Annotation.id == annotation_id).first()

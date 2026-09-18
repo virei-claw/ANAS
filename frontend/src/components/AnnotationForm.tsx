@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { annotationApi, dictApi, audioApi, DictItem } from '@/lib/api'
 import { useAnnotationTemplate, AnnotationTemplate } from '@/hooks/useAnnotationTemplate'
+import toast from 'react-hot-toast'
 
 interface AnnotationFormProps {
   audioId: string
@@ -112,25 +113,29 @@ export default function AnnotationForm({ audioId, startTime, endTime, onSuccess,
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // 1. 先裁剪音频片段
-    const clipResult = await audioApi.clip(audioId, startTime, endTime)
+    try {
+      // 1. 先裁剪音频片段
+      const clipResult = await audioApi.clip(audioId, startTime, endTime)
 
-    // 2. 创建标注，包含裁剪后的文件路径
-    await annotationApi.create({
-      audio_id: audioId,
-      start_time: startTime,
-      end_time: endTime,
-      part_name_id: form.part_name_id || null,
-      noise_type_id: form.noise_type_id || null,
-      road_type_id: form.road_type_id || null,
-      speed: form.speed ? Number(form.speed) : null,
-      temperature: form.temperature ? Number(form.temperature) : null,
-      test_mode: form.test_mode,
-      reason: form.reason || null,
-      solution: form.solution || null,
-      clip_filepath: clipResult.data.clip_filepath,
-    })
-    onSuccess()
+      // 2. 创建标注，包含裁剪后的文件路径
+      await annotationApi.create({
+        audio_id: audioId,
+        start_time: startTime,
+        end_time: endTime,
+        part_name_id: form.part_name_id || null,
+        noise_type_id: form.noise_type_id || null,
+        road_type_id: form.road_type_id || null,
+        speed: form.speed ? Number(form.speed) : null,
+        temperature: form.temperature ? Number(form.temperature) : null,
+        test_mode: form.test_mode,
+        reason: form.reason || null,
+        solution: form.solution || null,
+        clip_filepath: clipResult.data.clip_filepath,
+      })
+      onSuccess()
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || err?.message || '保存失败')
+    }
   }
 
   return (

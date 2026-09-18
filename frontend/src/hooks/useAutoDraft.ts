@@ -9,7 +9,7 @@ interface DraftData {
 }
 
 export function useAutoDraft(audioId: string, data: any) {
-  const timerRef = useRef<NodeJS.Timeout>()
+  const timerRef = useRef<ReturnType<typeof setTimeout>>()
 
   useEffect(() => {
     timerRef.current = setInterval(() => {

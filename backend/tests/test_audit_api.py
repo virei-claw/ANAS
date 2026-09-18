@@ -4,6 +4,7 @@ Test for audit log API endpoints.
 
 import pytest
 import uuid
+from unittest.mock import patch, MagicMock
 from httpx import AsyncClient, ASGITransport
 from app.main import app
 
@@ -72,12 +73,20 @@ async def test_annotation_create_logs_action():
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         token = await get_auth_token(client, "auditcreate")
 
-        # Create an audio first
-        audio_resp = await client.post(
-            "/api/audio/upload",
-            files={"file": ("test.wav", b"RIFF" + b"\x00" * 100, "audio/wav")},
-            headers={"Authorization": f"Bearer {token}"}
-        )
+        # Mock AudioSegment to avoid ffprobe dependency
+        mock_audio = MagicMock()
+        mock_audio.__len__ = MagicMock(return_value=1000)  # 1000ms duration
+        mock_audio.frame_rate = 44100
+
+        with patch("app.routers.audio.AudioSegment") as mock_segment:
+            mock_segment.from_file.return_value = mock_audio
+
+            # Create an audio first
+            audio_resp = await client.post(
+                "/api/audio/upload",
+                files={"file": ("test.wav", b"RIFF" + b"\x00" * 100, "audio/wav")},
+                headers={"Authorization": f"Bearer {token}"}
+            )
         audio_id = audio_resp.json()["id"]
 
         # Create annotation
@@ -113,12 +122,20 @@ async def test_annotation_update_logs_action():
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         token = await get_auth_token(client, "auditupdate")
 
-        # Create audio and annotation
-        audio_resp = await client.post(
-            "/api/audio/upload",
-            files={"file": ("test.wav", b"RIFF" + b"\x00" * 100, "audio/wav")},
-            headers={"Authorization": f"Bearer {token}"}
-        )
+        # Mock AudioSegment to avoid ffprobe dependency
+        mock_audio = MagicMock()
+        mock_audio.__len__ = MagicMock(return_value=1000)  # 1000ms duration
+        mock_audio.frame_rate = 44100
+
+        with patch("app.routers.audio.AudioSegment") as mock_segment:
+            mock_segment.from_file.return_value = mock_audio
+
+            # Create audio and annotation
+            audio_resp = await client.post(
+                "/api/audio/upload",
+                files={"file": ("test.wav", b"RIFF" + b"\x00" * 100, "audio/wav")},
+                headers={"Authorization": f"Bearer {token}"}
+            )
         audio_id = audio_resp.json()["id"]
 
         annotation_resp = await client.post(
@@ -160,12 +177,20 @@ async def test_annotation_delete_logs_action():
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         token = await get_auth_token(client, "auditdelete")
 
-        # Create audio and annotation
-        audio_resp = await client.post(
-            "/api/audio/upload",
-            files={"file": ("test.wav", b"RIFF" + b"\x00" * 100, "audio/wav")},
-            headers={"Authorization": f"Bearer {token}"}
-        )
+        # Mock AudioSegment to avoid ffprobe dependency
+        mock_audio = MagicMock()
+        mock_audio.__len__ = MagicMock(return_value=1000)  # 1000ms duration
+        mock_audio.frame_rate = 44100
+
+        with patch("app.routers.audio.AudioSegment") as mock_segment:
+            mock_segment.from_file.return_value = mock_audio
+
+            # Create audio and annotation
+            audio_resp = await client.post(
+                "/api/audio/upload",
+                files={"file": ("test.wav", b"RIFF" + b"\x00" * 100, "audio/wav")},
+                headers={"Authorization": f"Bearer {token}"}
+            )
         audio_id = audio_resp.json()["id"]
 
         annotation_resp = await client.post(

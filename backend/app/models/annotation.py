@@ -1,5 +1,6 @@
 import uuid
 from sqlalchemy import Column, String, Text, Integer, Float, DateTime, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database import Base
@@ -7,11 +8,11 @@ from app.database import Base
 class Annotation(Base):
     __tablename__ = "annotations"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    audio_id = Column(String(36), ForeignKey("audio_files.id", ondelete="CASCADE"), nullable=False)
-    part_name_id = Column(String(36), ForeignKey("part_names.id"), nullable=True)
-    noise_type_id = Column(String(36), ForeignKey("noise_types.id"), nullable=True)
-    road_type_id = Column(String(36), ForeignKey("road_types.id"), nullable=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=lambda: uuid.uuid4())
+    audio_id = Column(UUID(as_uuid=True), ForeignKey("audio_files.id", ondelete="CASCADE"), nullable=False)
+    part_name_id = Column(UUID(as_uuid=True), ForeignKey("part_names.id"), nullable=True)
+    noise_type_id = Column(UUID(as_uuid=True), ForeignKey("noise_types.id"), nullable=True)
+    road_type_id = Column(UUID(as_uuid=True), ForeignKey("road_types.id"), nullable=True)
     speed = Column(Integer, nullable=True)
     temperature = Column(Integer, nullable=True)
     test_mode = Column(String(10), nullable=True)  # 'dynamic' or 'static'

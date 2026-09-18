@@ -42,7 +42,7 @@ async def upload_audio(
     sample_rate = audio.frame_rate
 
     db_audio = AudioFile(
-        id=file_id,
+        id=str(file_id),
         filename=file.filename,
         filepath=filepath,
         duration=duration,
@@ -101,7 +101,7 @@ def list_audio(
             sample_rate=item.sample_rate,
             file_size=item.file_size,
             uploader_id=item.uploader_id,
-            uploader_name=uploader.full_name or uploader.username if uploader else None,
+            uploader_name=uploader.username if uploader else None,
             created_at=item.created_at
         ))
     return AudioFileList(items=result, total=total, page=page, page_size=page_size)
@@ -131,7 +131,7 @@ def get_audio(audio_id: uuid.UUID, db: Session = Depends(get_db)):
         sample_rate=audio.sample_rate,
         file_size=audio.file_size,
         uploader_id=audio.uploader_id,
-        uploader_name=audio.uploader.full_name or audio.uploader.username if audio.uploader else None,
+        uploader_name=audio.uploader.username if audio.uploader else None,
         created_at=audio.created_at
     )
 
