@@ -35,7 +35,7 @@ function NavBar({ user, onLogout, pendingCount = 0 }: NavBarProps) {
     // 仅管理员显示审核队列
     ...(isAdmin ? [{ path: '/review', label: '审核队列', icon: User, badge: pendingCount }] : []),
     { path: '/dashboard', label: '统计分析', icon: BarChart3 },
-    { path: '/export', label: '数据导出', icon: Download },
+    { path: '/export', label: '标注总览', icon: Download },
     { path: '/import', label: '批量导入', icon: Upload },
     // 仅管理员显示设置中的用户管理
     { path: '/settings', label: '设置', icon: SettingsIcon },
